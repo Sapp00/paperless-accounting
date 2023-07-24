@@ -6,4 +6,3 @@ class Expense(models.Model):
     price = models.DecimalField(decimal_places=2, max_digits=12)
     paid = models.BooleanField()
     paidDate = models.DateField("date published")
-

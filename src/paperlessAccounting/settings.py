@@ -30,6 +30,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 
+PAPERLESS_AUTH_TOKEN = env('AUTH_TOKEN')
+PAPERLESS_URL = env('PAPERLESS_URL')
+PAPERLESS_UNSAFE_SSL = env.get_value('PAPERLESS_UNSAFE_SSL', cast=bool, default=False)
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -40,6 +44,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'expenses.apps.ExpensesConfig',
+    'core.apps.CoreConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -106,6 +111,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'svelte/static'
 ]
 
 
