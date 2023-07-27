@@ -7,14 +7,16 @@ import (
 	"net/http"
 	"net/url"
 	"sapp/paperless-accounting/config"
+	"strconv"
 )
 
 type Paperless struct {
-	conf config.Config
+	conf *config.Config
 }
 
 func (p *Paperless) paperlessDocumentQueryExecute(query string, pageNumber int) ([]PaperlessDocument, error) {
-	uri, err := url.JoinPath(p.conf.PAPERLESS_URL, "/api/documents/?page="+string(pageNumber)+"&query="+query)
+	uri, err := url.JoinPath(p.conf.PAPERLESS_URL, "/api/documents/")
+
 	if err != nil {
 		return nil, errors.New("Invalid URL: " + err.Error())
 	}
@@ -23,6 +25,11 @@ func (p *Paperless) paperlessDocumentQueryExecute(query string, pageNumber int) 
 	if err != nil {
 		return nil, errors.New("Cannot create request: " + err.Error())
 	}
+
+	reqQuery := request.URL.Query()
+	reqQuery.Add("page", strconv.Itoa(pageNumber))
+	reqQuery.Add("query", query)
+	request.URL.RawQuery = reqQuery.Encode()
 
 	request.Header.Add("Accept", "application/json")
 	request.Header.Add("Content-Type", "application/json;charset=UTF-8")
@@ -47,13 +54,27 @@ func (p *Paperless) paperlessDocumentQueryExecute(query string, pageNumber int) 
 
 	fmt.Printf("client: response body: %s\n", resBody)
 
-	var out [5]PaperlessDocument
+	var out []PaperlessDocument
 
 	return out, nil
 }
 
-func (p *Paperless) PaperlessDocumentQuery(query string) []PaperlessDocument {
-	var out []PaperlessDocument
+func (p *Paperless) PaperlessDocumentQuery(query string) ([]PaperlessDocument, error) {
+	//var out []PaperlessDocument
 
-	return out
+	out, err := p.paperlessDocumentQueryExecute(query, 1)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func Init(conf *config.Config) (*Paperless, error) {
+	p := Paperless{
+		conf: conf,
+	}
+
+	return &p, nil
 }

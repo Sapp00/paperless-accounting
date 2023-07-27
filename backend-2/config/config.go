@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -61,8 +60,6 @@ func New() (*Config, error) {
 	} else {
 		return nil, err
 	}
-
-	fmt.Printf("Port: %v", config.APP_PORT)
 
 	return &config, nil
 }
