@@ -62,7 +62,7 @@ func New() (*Config, error) {
 	}
 
 	if val, err := strconv.ParseBool(getEnv("DEBUG_MODE", "false")); err == nil {
-		config.PAPERLESS_UNSAFE_SSL = val
+		config.DEBUG = val
 	} else {
 		return nil, err
 	}
