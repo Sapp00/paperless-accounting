@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	DEBUG                 bool
 	PAPERLESS_AUTH_TOKEN  string
 	APP_PORT              int
 	PAPERLESS_EXPENSE_TAG string
@@ -27,12 +28,11 @@ func getEnv(key, fallback string) string {
 
 func New() (*Config, error) {
 
+	err := godotenv.Load(".env")
 	config := Config{
 		PAPERLESS_EXPENSE_TAG: getEnv("PAPERLESS_EXPENSE_TAG", "expense"),
 		PAPERLESS_INCOME_TAG:  getEnv("PAPERLESS_INCOME_TAG", "income"),
 	}
-
-	err := godotenv.Load(".env")
 
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -56,6 +56,12 @@ func New() (*Config, error) {
 	}
 
 	if val, err := strconv.ParseBool(getEnv("PAPERLESS_UNSAFE_SSL", "false")); err == nil {
+		config.PAPERLESS_UNSAFE_SSL = val
+	} else {
+		return nil, err
+	}
+
+	if val, err := strconv.ParseBool(getEnv("DEBUG_MODE", "false")); err == nil {
 		config.PAPERLESS_UNSAFE_SSL = val
 	} else {
 		return nil, err

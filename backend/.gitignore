@@ -1,8 +1,2 @@
-package-lock.json
-node_modules/
-pnpm-lock.yaml
+go.sum
 .env
-*.db
-*.db-journal
-out/
-dist/
