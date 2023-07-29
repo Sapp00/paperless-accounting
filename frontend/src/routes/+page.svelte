@@ -1,5 +1,16 @@
 <!-- YOU CAN DELETE EVERYTHING IN THIS PAGE -->
 
+
+
+<script lang="ts">
+
+	import type { PageData } from './$types';  
+	export let data: PageData;
+
+	const { pokemons } = data;
+  
+</script>  
+
 <div class="container h-full mx-auto flex justify-center items-center">
 	<div class="space-y-10 text-center flex flex-col items-center">
 		<h2 class="h2">Welcome to Skeleton.</h2>
@@ -17,6 +28,21 @@
 				/>
 			</svg>
 		</figure>
+
+
+
+		<h1>Pokemons</h1>
+
+		
+
+		{#if pokemons}
+			{#each pokemons as pokemon}
+				<p>{pokemon.name}</p>
+			{/each}
+		{/if}
+
+
+
 		<!-- / -->
 		<div class="flex justify-center space-x-2">
 			<a
@@ -30,6 +56,7 @@
 		</div>
 		<div class="space-y-2">
 			<p>Try editing the following:</p>
+			<a href="/expenses">Test</a>
 			<p><code class="code">/src/routes/+layout.svelte</code></p>
 			<p><code class="code">/src/routes/+page.svelte</code></p>
 		</div>
