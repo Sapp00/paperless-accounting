@@ -7,14 +7,13 @@ export async function load({ fetch, params }) {
         const res = await fetch("http://localhost:8080/expenses");
         const item = await res.json();
 
-
         return {
-            pokemons: item
+            items: item
         };
     }
     catch(e){
         return {
-            pokemons: [],
+            items: [],
             error: "Cannot establish connection"
         }
     }

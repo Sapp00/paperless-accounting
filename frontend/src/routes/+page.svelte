@@ -7,7 +7,7 @@
 	import type { PageData } from './$types';  
 	export let data: PageData;
 
-	const { pokemons } = data;
+	const { pokemons, error } = data;
   
 </script>  
 
@@ -30,14 +30,15 @@
 		</figure>
 
 
+		{#if error}
+			<p><b>{error}</b></p>
+		{/if}
 
-		<h1>Pokemons</h1>
-
-		
+		<h1>Pokemons</h1>		
 
 		{#if pokemons}
 			{#each pokemons as pokemon}
-				<p>{pokemon.name}</p>
+				<p>{pokemon.value}</p>
 			{/each}
 		{/if}
 

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Line Chart</title>
+    <style>
+        /* Add some basic styling for the chart container */
+        #chart-container {
+            width: 600px;
+            height: 400px;
+            margin: 20px auto;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha512-M7nHCiNUOwFt6Us3r8alutZLm9qMt4s9951uo8jqO4UwJ1hziseL6O3ndFyigx6+LREfZqnhHxYjKRJ8ZQ69DQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <script>
+        // Sample data array with objects having date, category, and value properties
+        const data = [
+            { date: new Date('2023-07-01'), category: 'A', value: 50 },
+            { date: new Date('2023-07-02'), category: 'A', value: 70 },
+            { date: new Date('2023-07-03'), category: 'A', value: 30 },
+            { date: new Date('2023-07-01'), category: 'B', value: 20 },
+            { date: new Date('2023-07-02'), category: 'B', value: 40 },
+            { date: new Date('2023-07-03'), category: 'B', value: 60 }
+        ];
+
+        // Set up the dimensions and margins for the chart
+        const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+        const width = 600 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Create the SVG container for the chart
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        // Define the scales for the x and y axes
+        const xScale = d3.scaleTime()
+            .domain(d3.extent(data, d => d.date))
+            .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.value)])
+            .range([height, 0]);
+
+        // Define the lines for each category
+        const line = d3.line()
+            .x(d => xScale(d.date))
+            .y(d => yScale(d.value));
+
+        // Create the x axis
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(xScale));
+
+        // Create the y axis
+        svg.append("g")
+            .call(d3.axisLeft(yScale));
+
+        // Draw the lines
+        const categories = d3.group(data, d => d.category);
+
+        svg.selectAll(".line")
+            .data(categories)
+            .enter()
+            .append("path")
+            .attr("class", "line")
+            .attr("d", d => line(d.values))
+            .style("stroke", (d, i) => d3.schemeCategory10[i]); // Use different colors for each category
+
+    </script>
+</body>
+</html>

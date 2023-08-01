@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sapp/paperless-accounting/config"
+	"sapp/paperless-accounting/paperless"
 	"sapp/paperless-accounting/routes"
 )
 
@@ -14,6 +15,8 @@ func main() {
 		fmt.Printf("cannot load config: %s\n", err)
 		os.Exit(1)
 	}
+
+	paperless.StartCron(conf)
 
 	routes, err := routes.New(conf)
 
