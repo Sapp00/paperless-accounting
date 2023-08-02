@@ -13,7 +13,5 @@ build-database:
 start: start-redis start-containers
 
 start-containers:
+	docker-compose up -d
 	
-
-start-redis:
-	docker run --rm -it --name pa-reddis -p 6379:6379 -d redis /bin/bash

@@ -1,6 +1,9 @@
 package paperless
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type PaperlessDocument struct {
 	Id            int           `json:"id"`
@@ -21,4 +24,8 @@ type paperlessDocumentResponse struct {
 
 type PaperlessTime struct {
 	time.Time
+}
+
+func (p PaperlessDocument) MarshalBinary() ([]byte, error) {
+	return json.Marshal(p)
 }
