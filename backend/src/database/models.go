@@ -8,8 +8,21 @@ import (
 	"database/sql"
 )
 
-type Author struct {
-	ID   int64
-	Name string
-	Bio  sql.NullString
+type Expense struct {
+	ID          int64
+	Price       sql.NullFloat64
+	Expensedate sql.NullTime
+}
+
+type Income struct {
+	ID         int64
+	Price      sql.NullFloat64
+	Incomedate sql.NullTime
+}
+
+type Payment struct {
+	ID        int64
+	Expenseid int64
+	Price     float64
+	Paiddate  sql.NullTime
 }

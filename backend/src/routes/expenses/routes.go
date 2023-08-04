@@ -14,11 +14,14 @@ import (
 func (r *ExpenseRouter) GetAllExpenses(c *gin.Context) {
 	//c.IndentedJSON(http.StatusOK, albums)
 
-	all_expenses, err := r.paperless.PaperlessDocumentQuery("tag:" + r.conf.PAPERLESS_EXPENSE_TAG)
+	all_expenses, err := r.paperless.GetDocuments(paperless.Expense, "2023")
+	if err != nil {
+		log.Fatalf("Error occured when retrieving expenses: %s\n", err.Error())
+	}
 	// TODO: implement this
 	all_payments := all_expenses
 
-	fmt.Printf("implement me! all_payments")
+	fmt.Printf("implement me! all_payments\n")
 
 	if err != nil {
 		log.Fatalf("Error occured: %s", err.Error())
@@ -84,10 +87,6 @@ func (r *ExpenseRouter) GetAllExpenses(c *gin.Context) {
 	}
 
 	outputTruncated := out[:i]
-
-	for _, e := range outputTruncated {
-		fmt.Printf("%v\n", e)
-	}
 
 	c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)
 	c.JSON(http.StatusOK, outputTruncated)

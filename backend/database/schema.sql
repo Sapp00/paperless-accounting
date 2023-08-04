@@ -11,3 +11,9 @@ CREATE TABLE payments (
   paidDate date,
   FOREIGN KEY(expenseID) REFERENCES expenses(id)
 );
+
+CREATE TABLE incomes (
+  id   INTEGER PRIMARY KEY,
+  price DECIMAL(12,2),
+  incomeDate date
+);

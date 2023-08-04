@@ -2,6 +2,7 @@ package paperless
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sapp/paperless-accounting/config"
@@ -19,12 +20,12 @@ type PaperlessCron struct {
 }
 
 func (p PaperlessCron) Run() {
-	all_expenses, err := p.paperless.PaperlessDocumentQuery("tag:" + p.conf.PAPERLESS_EXPENSE_TAG)
+	all_expenses, err := p.paperless.paperlessDocumentQuery("tag:" + p.conf.PAPERLESS_EXPENSE_TAG)
 
 	if err != nil {
 		panic(err)
 	}
-	all_payments, err := p.paperless.PaperlessDocumentQuery("tag:" + p.conf.PAPERLESS_INCOME_TAG)
+	all_incomes, err := p.paperless.paperlessDocumentQuery("tag:" + p.conf.PAPERLESS_INCOME_TAG)
 	if err != nil {
 		panic(err)
 	}
@@ -42,32 +43,42 @@ func (p PaperlessCron) Run() {
 	}
 
 	// group by year
-	payment_years := map[int][]PaperlessDocument{}
-	for _, e := range all_payments {
+	income_years := map[int][]PaperlessDocument{}
+	for _, e := range all_incomes {
 		year := e.Created_date.Year()
 
-		if arr, ok := payment_years[year]; ok {
-			payment_years[year] = append(arr, e)
+		if arr, ok := income_years[year]; ok {
+			income_years[year] = append(arr, e)
 		} else {
-			payment_years[year] = []PaperlessDocument{e}
+			income_years[year] = []PaperlessDocument{e}
 		}
 	}
 
 	ctx := context.Background()
 
 	// write to redis
-	for k, v := range all_expenses {
+	for k, v := range expense_years {
 		field := strconv.Itoa(k)
-		err := p.client.HSet(ctx, "expenses", field, v).Err()
 
+		value, err := json.Marshal(v)
+		if err != nil {
+			panic(err)
+		}
+
+		err = p.client.HSet(ctx, "expenses", field, value).Err()
 		if err != nil {
 			panic(err)
 		}
 	}
-	for k, v := range all_payments {
+	for k, v := range income_years {
 		field := strconv.Itoa(k)
-		err := p.client.HSet(ctx, "payments", field, v).Err()
 
+		value, err := json.Marshal(v)
+		if err != nil {
+			panic(err)
+		}
+
+		err = p.client.HSet(ctx, "incomes", field, value).Err()
 		if err != nil {
 			panic(err)
 		}
@@ -75,12 +86,12 @@ func (p PaperlessCron) Run() {
 
 	// expiry time = 5min
 	p.client.Expire(ctx, "expenses", time.Minute*5)
-	p.client.Expire(ctx, "payments", time.Minute*5)
+	p.client.Expire(ctx, "incomes", time.Minute*5)
 
 	// Todo: previous code should only be executed initially. in the future, the written arrays should be replaced with JSON
 	// the JSON then will then be written to the HSet and
 
-	fmt.Printf("Have written %v records to redis.\n", len(all_expenses)+len(all_expenses))
+	fmt.Printf("Have written %v expense & %v income records to redis.\n", len(all_expenses), len(all_incomes))
 }
 
 func (p PaperlessCron) Interval() time.Duration {

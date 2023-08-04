@@ -10,64 +10,223 @@ import (
 	"database/sql"
 )
 
-const createAuthor = `-- name: CreateAuthor :one
-INSERT INTO authors (
-  name, bio
+const createExpense = `-- name: CreateExpense :one
+INSERT INTO expenses (
+  id, price, expenseDate
+) VALUES (
+  ?, ?, ?
+)
+RETURNING id, price, expensedate
+`
+
+type CreateExpenseParams struct {
+	ID          int64
+	Price       sql.NullFloat64
+	Expensedate sql.NullTime
+}
+
+func (q *Queries) CreateExpense(ctx context.Context, arg CreateExpenseParams) (Expense, error) {
+	row := q.db.QueryRowContext(ctx, createExpense, arg.ID, arg.Price, arg.Expensedate)
+	var i Expense
+	err := row.Scan(&i.ID, &i.Price, &i.Expensedate)
+	return i, err
+}
+
+const createIncome = `-- name: CreateIncome :one
+INSERT INTO incomes (
+  price, incomeDate
 ) VALUES (
   ?, ?
 )
-RETURNING id, name, bio
+RETURNING id, price, incomedate
 `
 
-type CreateAuthorParams struct {
-	Name string
-	Bio  sql.NullString
+type CreateIncomeParams struct {
+	Price      sql.NullFloat64
+	Incomedate sql.NullTime
 }
 
-func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) (Author, error) {
-	row := q.db.QueryRowContext(ctx, createAuthor, arg.Name, arg.Bio)
-	var i Author
-	err := row.Scan(&i.ID, &i.Name, &i.Bio)
+func (q *Queries) CreateIncome(ctx context.Context, arg CreateIncomeParams) (Income, error) {
+	row := q.db.QueryRowContext(ctx, createIncome, arg.Price, arg.Incomedate)
+	var i Income
+	err := row.Scan(&i.ID, &i.Price, &i.Incomedate)
 	return i, err
 }
 
-const deleteAuthor = `-- name: DeleteAuthor :exec
-DELETE FROM authors
+const createPayment = `-- name: CreatePayment :one
+INSERT INTO payments (
+  expenseID, price, paidDate
+) VALUES (
+  ?, ?, ?
+)
+RETURNING id, expenseid, price, paiddate
+`
+
+type CreatePaymentParams struct {
+	Expenseid int64
+	Price     float64
+	Paiddate  sql.NullTime
+}
+
+func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
+	row := q.db.QueryRowContext(ctx, createPayment, arg.Expenseid, arg.Price, arg.Paiddate)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.Expenseid,
+		&i.Price,
+		&i.Paiddate,
+	)
+	return i, err
+}
+
+const deleteExpense = `-- name: DeleteExpense :exec
+DELETE FROM expenses
 WHERE id = ?
 `
 
-func (q *Queries) DeleteAuthor(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAuthor, id)
+func (q *Queries) DeleteExpense(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteExpense, id)
 	return err
 }
 
-const getAuthor = `-- name: GetAuthor :one
-SELECT id, name, bio FROM authors
+const deleteIncome = `-- name: DeleteIncome :exec
+DELETE FROM incomes
+WHERE id = ?
+`
+
+func (q *Queries) DeleteIncome(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteIncome, id)
+	return err
+}
+
+const deletePayment = `-- name: DeletePayment :exec
+DELETE FROM payments
+WHERE id = ?
+`
+
+func (q *Queries) DeletePayment(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deletePayment, id)
+	return err
+}
+
+const getExpense = `-- name: GetExpense :one
+SELECT id, price, expensedate FROM expenses
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetAuthor(ctx context.Context, id int64) (Author, error) {
-	row := q.db.QueryRowContext(ctx, getAuthor, id)
-	var i Author
-	err := row.Scan(&i.ID, &i.Name, &i.Bio)
+func (q *Queries) GetExpense(ctx context.Context, id int64) (Expense, error) {
+	row := q.db.QueryRowContext(ctx, getExpense, id)
+	var i Expense
+	err := row.Scan(&i.ID, &i.Price, &i.Expensedate)
 	return i, err
 }
 
-const listAuthors = `-- name: ListAuthors :many
-SELECT id, name, bio FROM authors
-ORDER BY name
+const getIncome = `-- name: GetIncome :one
+SELECT id, price, incomedate FROM incomes
+WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
-	rows, err := q.db.QueryContext(ctx, listAuthors)
+func (q *Queries) GetIncome(ctx context.Context, id int64) (Income, error) {
+	row := q.db.QueryRowContext(ctx, getIncome, id)
+	var i Income
+	err := row.Scan(&i.ID, &i.Price, &i.Incomedate)
+	return i, err
+}
+
+const getPayment = `-- name: GetPayment :one
+SELECT id, expenseid, price, paiddate FROM payments
+WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetPayment(ctx context.Context, id int64) (Payment, error) {
+	row := q.db.QueryRowContext(ctx, getPayment, id)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.Expenseid,
+		&i.Price,
+		&i.Paiddate,
+	)
+	return i, err
+}
+
+const listExpenses = `-- name: ListExpenses :many
+SELECT id, price, expensedate FROM expenses
+ORDER BY expenseDate
+`
+
+func (q *Queries) ListExpenses(ctx context.Context) ([]Expense, error) {
+	rows, err := q.db.QueryContext(ctx, listExpenses)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Author
+	var items []Expense
 	for rows.Next() {
-		var i Author
-		if err := rows.Scan(&i.ID, &i.Name, &i.Bio); err != nil {
+		var i Expense
+		if err := rows.Scan(&i.ID, &i.Price, &i.Expensedate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPayments = `-- name: ListPayments :many
+SELECT id, expenseid, price, paiddate FROM payments
+ORDER BY paidDate
+`
+
+func (q *Queries) ListPayments(ctx context.Context) ([]Payment, error) {
+	rows, err := q.db.QueryContext(ctx, listPayments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Expenseid,
+			&i.Price,
+			&i.Paiddate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listincomes = `-- name: Listincomes :many
+SELECT id, price, incomedate FROM incomes
+ORDER BY incomeDate
+`
+
+func (q *Queries) Listincomes(ctx context.Context) ([]Income, error) {
+	rows, err := q.db.QueryContext(ctx, listincomes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Income
+	for rows.Next() {
+		var i Income
+		if err := rows.Scan(&i.ID, &i.Price, &i.Incomedate); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
