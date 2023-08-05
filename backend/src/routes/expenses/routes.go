@@ -5,19 +5,23 @@ import (
 	"log"
 	"net/http"
 	"sapp/paperless-accounting/config"
-	"sapp/paperless-accounting/paperless"
+	"sapp/paperless-accounting/documents"
 	"sort"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (r *ExpenseRouter) GetAllExpenses(c *gin.Context) {
+func (r *ExpenseRouter) GetExpensesPerDay(c *gin.Context) {
 	//c.IndentedJSON(http.StatusOK, albums)
+	c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)
 
-	all_expenses, err := r.paperless.GetDocuments(paperless.Expense, "2023")
+	all_expenses, err := r.dm.GetExpensesInYear("2023")
 	if err != nil {
 		log.Fatalf("Error occured when retrieving expenses: %s\n", err.Error())
 	}
+
+	fmt.Printf("%v\n", all_expenses)
+
 	// TODO: implement this
 	all_payments := all_expenses
 
@@ -63,14 +67,10 @@ func (r *ExpenseRouter) GetAllExpenses(c *gin.Context) {
 	}
 	// create entries for payments
 	var paid_sum float32 = 0
-	for _, e := range all_expenses {
+	for _, e := range all_payments {
 		// TODO: change created date! needs to be based on paid_date which is retrieved from the database
-		e_exp_val := float32(int(e.Title[0]) * 20)
-		var e_paid_val float32 = 0
-		if (int(e_exp_val) % 3) != 0 {
-			e_paid_val = e_exp_val
-		}
-		e_paid_date := e.Created_date
+		var e_paid_val float32 = float32(e.Value)
+		e_paid_date := e.Date
 
 		// update expense
 		paid_sum += e_paid_val
@@ -93,15 +93,11 @@ func (r *ExpenseRouter) GetAllExpenses(c *gin.Context) {
 
 }
 
-func NewRouter(conf *config.Config) (*ExpenseRouter, error) {
-	p, err := paperless.Init(conf)
-	if err != nil {
-		return nil, err
-	}
+func NewRouter(conf *config.Config, dm *documents.DocumentMgr) (*ExpenseRouter, error) {
 
 	r := ExpenseRouter{
-		conf:      conf,
-		paperless: p,
+		conf: conf,
+		dm:   dm,
 	}
 
 	return &r, nil

@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"sapp/paperless-accounting/database"
+
+	_ "embed"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var ddl string

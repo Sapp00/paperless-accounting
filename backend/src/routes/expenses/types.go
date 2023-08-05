@@ -2,12 +2,13 @@ package expenses
 
 import (
 	"sapp/paperless-accounting/config"
+	"sapp/paperless-accounting/documents"
 	"sapp/paperless-accounting/paperless"
 )
 
 type ExpenseRouter struct {
-	conf      *config.Config
-	paperless *paperless.Paperless
+	conf *config.Config
+	dm   *documents.DocumentMgr
 }
 
 type chartEntry struct {

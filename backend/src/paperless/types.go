@@ -9,7 +9,7 @@ type paperlessResponse interface {
 }
 
 type PaperlessDocument struct {
-	Id              int           `json:"id"`
+	ID              int           `json:"id"`
 	CorrespondentID int           `json:"correspondent"`
 	Title           string        `json:"title"`
 	Content         string        `json:"content"`
@@ -18,8 +18,8 @@ type PaperlessDocument struct {
 }
 
 type PaperlessCorrespondent struct {
-	Id   int    `json:"id"`
-	Name string `json:"name`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type paperlessDocumentResponse struct {

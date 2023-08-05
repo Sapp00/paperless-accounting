@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE expenses (
   id   INTEGER PRIMARY KEY,
   price DECIMAL(12,2),
@@ -17,3 +19,11 @@ CREATE TABLE incomes (
   price DECIMAL(12,2),
   incomeDate date
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE expenses;
+DROP TABLE payments;
+DROP TABLE incomes;
+-- +goose StatementEnd

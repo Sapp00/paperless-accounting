@@ -1,6 +1,7 @@
 package documents
 
 import (
+	"log"
 	"sapp/paperless-accounting/config"
 	"sapp/paperless-accounting/database"
 	"sapp/paperless-accounting/paperless"
@@ -11,7 +12,7 @@ type DocumentMgr struct {
 	db        *database.Queries
 }
 
-func New(conf *config.Config) (*DocumentMgr, error) {
+func NewManager(conf *config.Config) (*DocumentMgr, error) {
 	p, err := paperless.Init(conf)
 
 	if err != nil {
@@ -26,6 +27,7 @@ func New(conf *config.Config) (*DocumentMgr, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Print("Setted up DB")
 
 	return &m, nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"reflect"
 	"sapp/paperless-accounting/config"
+	"sort"
 	"strconv"
 )
 
@@ -108,6 +109,10 @@ func (p *Paperless) paperlessDocumentQuery(query string) ([]PaperlessDocument, e
 		return nil, err
 	}
 
+	sort.SliceStable(out, func(i, j int) bool {
+		return out[i].ID < out[j].ID
+	})
+
 	return out, nil
 }
 
@@ -119,6 +124,10 @@ func (p *Paperless) paperlessCorrespondentList() ([]PaperlessCorrespondent, erro
 	if err != nil {
 		return nil, err
 	}
+
+	sort.SliceStable(out, func(i, j int) bool {
+		return out[i].ID < out[j].ID
+	})
 
 	return out, nil
 }
