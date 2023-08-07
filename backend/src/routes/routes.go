@@ -40,8 +40,8 @@ func (r Routes) Setup() error {
 	if err != nil {
 		return err
 	}
-	r.router.GET("/expenses", exp.GetExpensesPerDay)
-	r.router.GET("/expenses/detail", exp.GetExpense)
+	r.router.GET("/expenses/:year", exp.GetExpensesPerDay)
+	r.router.GET("/expenses/:year/:id", exp.GetExpense)
 
 	err = r.router.Run("localhost:8080")
 	return err

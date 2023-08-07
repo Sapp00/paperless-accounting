@@ -3,7 +3,6 @@ package documents
 import (
 	"context"
 	"sapp/paperless-accounting/paperless"
-	"time"
 )
 
 type Income struct {
@@ -39,17 +38,13 @@ func (m *DocumentMgr) GetIncomesInYear(year string) ([]Income, error) {
 			e_db := db_result[i]
 			if e_db.ID == int64(e_paper.ID) {
 				// check validity
-				e_time := time.Unix(0, 0)
-				if e_db.Incomedate.Valid {
-					e_time = e_db.Incomedate.Time
-				}
 				e_price := float64(0)
 				if e_db.Price.Valid {
 					e_price = e_db.Price.Float64
 				}
 
 				income := Income{
-					Date:          paperless.NewPaperlessTime(e_time),
+					Date:          paperless.NewPaperlessTime(e_db.Incomedate),
 					Value:         e_price,
 					PaperlessID:   e_paper.ID,
 					Correspondent: e_paper.CorrespondentID,

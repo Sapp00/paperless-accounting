@@ -1,1 +1,0 @@
-<p> detail for XYZ </p>

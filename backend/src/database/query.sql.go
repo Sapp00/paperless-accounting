@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createExpense = `-- name: CreateExpense :one
@@ -22,7 +23,7 @@ RETURNING id, price, expensedate
 type CreateExpenseParams struct {
 	ID          int64
 	Price       sql.NullFloat64
-	Expensedate sql.NullTime
+	Expensedate time.Time
 }
 
 func (q *Queries) CreateExpense(ctx context.Context, arg CreateExpenseParams) (Expense, error) {
@@ -43,7 +44,7 @@ RETURNING id, price, incomedate
 
 type CreateIncomeParams struct {
 	Price      sql.NullFloat64
-	Incomedate sql.NullTime
+	Incomedate time.Time
 }
 
 func (q *Queries) CreateIncome(ctx context.Context, arg CreateIncomeParams) (Income, error) {
@@ -65,7 +66,7 @@ RETURNING id, expenseid, price, paiddate
 type CreatePaymentParams struct {
 	Expenseid int64
 	Price     float64
-	Paiddate  sql.NullTime
+	Paiddate  time.Time
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
@@ -153,7 +154,7 @@ func (q *Queries) GetPayment(ctx context.Context, id int64) (Payment, error) {
 
 const listExpenses = `-- name: ListExpenses :many
 SELECT id, price, expensedate FROM expenses
-ORDER BY expenseDate
+ORDER BY id
 `
 
 func (q *Queries) ListExpenses(ctx context.Context) ([]Expense, error) {
@@ -181,7 +182,7 @@ func (q *Queries) ListExpenses(ctx context.Context) ([]Expense, error) {
 
 const listPayments = `-- name: ListPayments :many
 SELECT id, expenseid, price, paiddate FROM payments
-ORDER BY paidDate
+ORDER BY id
 `
 
 func (q *Queries) ListPayments(ctx context.Context) ([]Payment, error) {
@@ -214,7 +215,7 @@ func (q *Queries) ListPayments(ctx context.Context) ([]Payment, error) {
 
 const listincomes = `-- name: Listincomes :many
 SELECT id, price, incomedate FROM incomes
-ORDER BY incomeDate
+ORDER BY id
 `
 
 func (q *Queries) Listincomes(ctx context.Context) ([]Income, error) {

@@ -12,7 +12,7 @@ WHERE id = ? LIMIT 1;
 
 -- name: ListExpenses :many
 SELECT * FROM expenses
-ORDER BY expenseDate;
+ORDER BY id;
 
 -- name: DeleteExpense :exec
 DELETE FROM expenses
@@ -34,7 +34,7 @@ WHERE id = ? LIMIT 1;
 
 -- name: ListPayments :many
 SELECT * FROM payments
-ORDER BY paidDate;
+ORDER BY id;
 
 -- name: DeletePayment :exec
 DELETE FROM payments
@@ -56,7 +56,7 @@ WHERE id = ? LIMIT 1;
 
 -- name: Listincomes :many
 SELECT * FROM incomes
-ORDER BY incomeDate;
+ORDER BY id;
 
 -- name: DeleteIncome :exec
 DELETE FROM incomes

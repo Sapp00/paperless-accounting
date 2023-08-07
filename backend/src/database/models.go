@@ -6,23 +6,24 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Expense struct {
 	ID          int64
 	Price       sql.NullFloat64
-	Expensedate sql.NullTime
+	Expensedate time.Time
 }
 
 type Income struct {
 	ID         int64
 	Price      sql.NullFloat64
-	Incomedate sql.NullTime
+	Incomedate time.Time
 }
 
 type Payment struct {
 	ID        int64
 	Expenseid int64
 	Price     float64
-	Paiddate  sql.NullTime
+	Paiddate  time.Time
 }

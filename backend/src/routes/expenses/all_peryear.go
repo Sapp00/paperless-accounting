@@ -15,12 +15,15 @@ func (r *ExpenseRouter) GetExpensesPerDay(c *gin.Context) {
 	//c.IndentedJSON(http.StatusOK, albums)
 	c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)
 
-	all_expenses, err := r.dm.GetExpensesInYear("2023")
+	yParam := c.Param("year")
+	if yParam == "" {
+		c.JSON(http.StatusBadRequest, "No year has been defined")
+		return
+	}
+	all_expenses, err := r.dm.GetExpensesInYear(yParam)
 	if err != nil {
 		log.Fatalf("Error occured when retrieving expenses: %s\n", err.Error())
 	}
-
-	fmt.Printf("%v\n", all_expenses)
 
 	// TODO: implement this
 	all_payments := all_expenses

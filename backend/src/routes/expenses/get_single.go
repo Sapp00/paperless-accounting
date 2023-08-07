@@ -9,13 +9,13 @@ import (
 )
 
 func (r *ExpenseRouter) GetExpense(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)
 		c.JSON(http.StatusBadRequest, "ID not defined")
 		return
 	}
-	year := c.Query("year")
+	year := c.Param("year")
 	if year == "" {
 		c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)
 		c.JSON(http.StatusBadRequest, "Year not defined")
