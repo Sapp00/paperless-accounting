@@ -6,6 +6,11 @@
 	// Most of your app wide CSS should be put in this file
 	import '../app.postcss';
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+
+	import Navigation from '$lib/Navigation/Navigation.svelte';
+	import Breadcrumbs from '$lib/Navigation/Breadcrumbs.svelte';
+
+	import { page } from '$app/stores';
 </script>
 
 <!-- App Shell -->
@@ -35,7 +40,7 @@
 				</a>
 				<a
 					class="btn btn-sm variant-ghost-surface"
-					href="https://github.com/skeletonlabs/skeleton"
+					href="https://github.com/Sapp00/paperless-accounting"
 					target="_blank"
 					rel="noreferrer"
 				>
@@ -44,6 +49,14 @@
 			</svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
+	<svelte:fragment slot="sidebarLeft">
+		<Navigation />
+	</svelte:fragment>
 	<!-- Page Route Content -->
-	<slot />
+	<AppShell>
+		<svelte:fragment slot="header">
+			<Breadcrumbs />
+		</svelte:fragment>
+		<slot />
+	</AppShell>
 </AppShell>

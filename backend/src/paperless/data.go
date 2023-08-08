@@ -25,6 +25,9 @@ func (p *Paperless) GetDocuments(typ DocumentType, year string) ([]PaperlessDocu
 	val, err := p.client.HGet(ctx, tag, year).Result()
 
 	if err != nil {
+		if err.Error() == "redis: nil" {
+			return nil, nil
+		}
 		return nil, err
 	}
 

@@ -3,6 +3,9 @@
     import { onMount } from "svelte";
     import * as d3 from 'd3';
 
+    import { Table } from '@skeletonlabs/skeleton';
+    import { tableMapperValues, type TableSource } from '@skeletonlabs/skeleton';
+
 	export let data: PageData;
     const { items, error } = data;
 
@@ -82,9 +85,53 @@
              .attr("d", (d: any) => area(d));
     });
 
+    
+    // table
+
+    const tableSimple: TableSource = {
+        // A list of heading labels.
+        head: ['Date', 'Title', 'Weight'],
+        // The data visibly shown in your table body UI.
+        body: tableMapperValues(items, ['date', 'title', 'value']),
+        // Optional: The data returned when interactive is enabled and a row is clicked.
+        meta: tableMapperValues(items, ['id', 'date', 'title', 'category', 'value']),
+        // Optional: A list of footer labels.
+        foot: ['Total', '', '<code class="code">5</code>']
+    };
+
+    let selected;
+
+    function mySelectionHandler(meta: unknown): void{
+        console.log('on:selected', meta);
+        //window.location.href = "/expenses/" + meta
+    }
 
 </script>
 
 <a href="/expenses/detail">for some more details</a>
 <svg id="expenses_chart" width="600" height="500"></svg>
-<p>script?</p>
+
+<Table source={tableSimple} interactive={true} on:selected={mySelectionHandler} />
+
+<div class="table-container">
+    <table class="table table-hover">
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Name</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+            <!-- change that -->
+			{#each items as row, i}
+				<tr>
+					
+                    <td>{row.date}</td>
+					<td>{row.category}</td>
+					<td>{row.value}</td>
+				</tr>
+			{/each}
+		</tbody>
+    </table>
+</div>

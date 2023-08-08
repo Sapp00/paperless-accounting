@@ -65,7 +65,7 @@ func (r *ExpenseRouter) GetExpensesPerDay(c *gin.Context) {
 		}
 	}
 	// is empty or has an expense?
-	if out[i] == (chartEntry{}) {
+	if len(all_expenses) > 0 && out[i] == (chartEntry{}) {
 		i++
 	}
 	// create entries for payments
@@ -85,7 +85,7 @@ func (r *ExpenseRouter) GetExpensesPerDay(c *gin.Context) {
 		}
 	}
 	// is empty or has an expense?
-	if out[i] != (chartEntry{}) {
+	if len(all_payments) > 0 && out[i] != (chartEntry{}) {
 		i--
 	}
 
