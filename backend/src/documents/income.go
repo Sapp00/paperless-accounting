@@ -20,7 +20,7 @@ type Income struct {
 }
 
 func (m *DocumentMgr) GetIncomesInYear(year string) ([]Income, error) {
-	p_result, err := m.paperless.GetDocuments(paperless.Income, year)
+	p_result, err := m.paperless.GetDocuments(paperless.Income)
 	if err != nil {
 		return nil, err
 	}

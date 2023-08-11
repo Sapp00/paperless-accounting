@@ -7,6 +7,7 @@ import (
 	"sapp/paperless-accounting/config"
 	"sapp/paperless-accounting/documents"
 	"sort"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +21,13 @@ func (r *ExpenseRouter) GetExpensesPerDay(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "No year has been defined")
 		return
 	}
-	all_expenses, err := r.dm.GetExpensesInYear(yParam)
+
+	yInt, err := strconv.Atoi(yParam)
+	if err != nil {
+		log.Fatalf("Error occured when converting year parameter: %s\n", err.Error())
+	}
+
+	all_expenses, err := r.dm.GetExpensesInYear(yInt)
 	if err != nil {
 		log.Fatalf("Error occured when retrieving expenses: %s\n", err.Error())
 	}

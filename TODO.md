@@ -1,0 +1,1 @@
+- need to add db sync to paperless cron

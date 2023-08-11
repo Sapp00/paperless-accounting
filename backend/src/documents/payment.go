@@ -4,8 +4,8 @@ import "sapp/paperless-accounting/paperless"
 
 type Payment struct {
 	// from database
+	ID        int
 	Date      paperless.PaperlessTime
-	Category  paperless.DocumentType
 	Value     float32
 	ExpenseID int
 }

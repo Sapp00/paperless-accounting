@@ -29,7 +29,7 @@ func (r *ExpenseRouter) GetExpense(c *gin.Context) {
 		return
 	}
 
-	doc, err := r.dm.GetExpense(idI, year)
+	doc, err := r.dm.GetExpense(idI)
 	if err != nil {
 		log.Printf("Error occured: %s", err.Error())
 		c.Header("Access-Control-Allow-Origin", r.conf.FRONTEND_URL)

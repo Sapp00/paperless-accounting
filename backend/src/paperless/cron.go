@@ -7,7 +7,6 @@ import (
 	"log"
 	"sapp/paperless-accounting/config"
 	"sapp/paperless-accounting/crons"
-	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -30,55 +29,25 @@ func (p PaperlessCron) Run() {
 		panic(err)
 	}
 
-	// group by year
-	expense_years := map[int][]PaperlessDocument{}
-	for _, e := range all_expenses {
-		year := e.Created_date.Year()
-
-		if arr, ok := expense_years[year]; ok {
-			expense_years[year] = append(arr, e)
-		} else {
-			expense_years[year] = []PaperlessDocument{e}
-		}
-	}
-
-	// group by year
-	income_years := map[int][]PaperlessDocument{}
-	for _, e := range all_incomes {
-		year := e.Created_date.Year()
-
-		if arr, ok := income_years[year]; ok {
-			income_years[year] = append(arr, e)
-		} else {
-			income_years[year] = []PaperlessDocument{e}
-		}
-	}
-
 	ctx := context.Background()
-
-	// write to redis
-	for k, v := range expense_years {
-		field := strconv.Itoa(k)
-
-		value, err := json.Marshal(v)
+	for _, e := range all_expenses {
+		ej, err := json.Marshal(&e)
 		if err != nil {
 			panic(err)
 		}
-
-		err = p.client.HSet(ctx, "expenses", field, value).Err()
+		// store id
+		err = p.client.ZAdd(ctx, "expenses", redis.Z{Score: float64(e.ID), Member: ej}).Err()
 		if err != nil {
 			panic(err)
 		}
 	}
-	for k, v := range income_years {
-		field := strconv.Itoa(k)
 
-		value, err := json.Marshal(v)
+	for _, e := range all_incomes {
+		ej, err := json.Marshal(&e)
 		if err != nil {
 			panic(err)
 		}
-
-		err = p.client.HSet(ctx, "incomes", field, value).Err()
+		err = p.client.ZAdd(ctx, "incomes", redis.Z{Score: float64(e.ID), Member: ej}).Err()
 		if err != nil {
 			panic(err)
 		}

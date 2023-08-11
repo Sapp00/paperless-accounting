@@ -1,0 +1,87 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Payment {
+  id: ID!
+	date: Time!
+	value: Float!
+	expenseID: Int!
+}
+
+type Income {
+  date:  Time
+  value: Float
+
+  # from paperless
+  paperlessID:   ID!
+  correspondent: Int!
+  title:         String!
+  content:       String!
+  tags:          [Int!]!
+  created_date:  Time!
+}
+
+type Expense {
+  date:  Time
+  value: Float
+
+  # from paperless
+  paperlessID:   ID!
+  correspondent: Int!
+  title:         String!
+  content:       String!
+  tags:          [Int!]!
+  created_date:  Time!
+}
+
+
+type Query {
+  getIncomes: [Income!]!
+  getExpenses: [Expense!]!
+  getPayments: [Payment!]!
+
+  getIncome(id: ID!): Income!
+  getExpense(id: ID!): Expense!
+  getPayment(id: ID!): Payment!
+}
+
+input NewPayment {
+	date: Time!
+	value: Float!
+	expenseId: ID!
+}
+
+input UpdatePayment {
+  id: ID!
+	date: Time
+	value: Float
+	expenseId: ID
+}
+
+input UpdateExpense {
+  date:  Time
+  value: Float
+
+  # from paperless
+  paperlessID:   ID!
+}
+
+input UpdateIncome {
+  date:  Time
+  value: Float
+
+  # from paperless
+  paperlessID:   ID!
+}
+
+type Mutation {
+  createPayment(input: NewPayment!): Payment!
+  updatePayment(input: UpdatePayment!): Payment!
+  deletePayment(id: ID!): Payment!
+
+  updateExpense(input: UpdateExpense!): Expense!
+  updateIncome(input: UpdateIncome!): Income!
+}
+
+scalar Time

@@ -22,7 +22,7 @@ WHERE id = ?;
 
 -- name: CreatePayment :one
 INSERT INTO payments (
-  expenseID, price, paidDate
+  id, expenseID, price, paidDate
 ) VALUES (
   ?, ?, ?
 )
