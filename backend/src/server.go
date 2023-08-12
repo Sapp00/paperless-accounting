@@ -8,6 +8,7 @@ import (
 	"sapp/paperless-accounting/documents"
 	"sapp/paperless-accounting/graph/gql_generated"
 	"sapp/paperless-accounting/graph/gql_resolvers"
+	"sapp/paperless-accounting/paperless"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -25,6 +26,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	paperless.StartCron(conf)
 
 	doc, err := documents.NewManager(conf)
 	if err != nil {

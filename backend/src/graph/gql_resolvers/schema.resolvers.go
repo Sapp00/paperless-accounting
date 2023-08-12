@@ -49,7 +49,7 @@ func (r *queryResolver) GetIncomes(ctx context.Context) ([]*documents.Income, er
 
 // GetExpenses is the resolver for the getExpenses field.
 func (r *queryResolver) GetExpenses(ctx context.Context) ([]*documents.Expense, error) {
-	panic(fmt.Errorf("not implemented: GetExpenses - getExpenses"))
+	return r.Dm.GetExpenses()
 }
 
 // GetPayments is the resolver for the getPayments field.

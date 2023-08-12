@@ -58,7 +58,7 @@ func (m *DocumentMgr) GetExpense(id int) (*Expense, error) {
 	return nil, errors.New("documents:expense: could not find the respective id")
 }
 
-func (m *DocumentMgr) GetExpensesInYear(year int) ([]Expense, error) {
+func (m *DocumentMgr) GetExpensesInYear(year int) ([]*Expense, error) {
 	p_result, err := m.paperless.GetDocuments(paperless.Expense)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (m *DocumentMgr) GetExpensesInYear(year int) ([]Expense, error) {
 
 	fmt.Printf("db: %v\n", db_result)
 
-	var out []Expense
+	var out []*Expense
 	i := 0
 paper_loop:
 	for _, e_paper := range p_result {
@@ -96,7 +96,7 @@ paper_loop:
 				}
 
 				// merge data
-				expense := Expense{
+				expense := &Expense{
 					Date:          *paperless.NewPaperlessTime(e_db.Expensedate),
 					Value:         e_price,
 					PaperlessID:   e_paper.ID,
@@ -149,6 +149,6 @@ paper_loop:
 	return out, err
 }
 
-func (m *DocumentMgr) GetExpenses() ([]Expense, error) {
+func (m *DocumentMgr) GetExpenses() ([]*Expense, error) {
 	return m.GetExpensesInYear(0)
 }

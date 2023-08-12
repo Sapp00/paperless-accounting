@@ -2,6 +2,12 @@
 #
 # https://gqlgen.com/getting-started/
 
+type ChartEntry{
+  date: Time!
+  category: String!
+  value: Float!
+}
+
 type Payment {
   id: ID!
 	date: Time!
