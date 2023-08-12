@@ -56,21 +56,27 @@ func (q *Queries) CreateIncome(ctx context.Context, arg CreateIncomeParams) (Inc
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payments (
-  expenseID, price, paidDate
+  id, expenseID, price, paidDate
 ) VALUES (
-  ?, ?, ?
+  ?, ?, ?, ?
 )
 RETURNING id, expenseid, price, paiddate
 `
 
 type CreatePaymentParams struct {
+	ID        int64
 	Expenseid int64
 	Price     float64
 	Paiddate  time.Time
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
-	row := q.db.QueryRowContext(ctx, createPayment, arg.Expenseid, arg.Price, arg.Paiddate)
+	row := q.db.QueryRowContext(ctx, createPayment,
+		arg.ID,
+		arg.Expenseid,
+		arg.Price,
+		arg.Paiddate,
+	)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
@@ -239,4 +245,55 @@ func (q *Queries) Listincomes(ctx context.Context) ([]Income, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateExpense = `-- name: UpdateExpense :exec
+UPDATE expenses
+SET price = ?, expenseDate = ?
+WHERE id = ?
+`
+
+type UpdateExpenseParams struct {
+	Price       sql.NullFloat64
+	Expensedate time.Time
+	ID          int64
+}
+
+func (q *Queries) UpdateExpense(ctx context.Context, arg UpdateExpenseParams) error {
+	_, err := q.db.ExecContext(ctx, updateExpense, arg.Price, arg.Expensedate, arg.ID)
+	return err
+}
+
+const updateIncome = `-- name: UpdateIncome :exec
+UPDATE incomes
+SET price = ?, incomeDate = ?
+WHERE id = ?
+`
+
+type UpdateIncomeParams struct {
+	Price      sql.NullFloat64
+	Incomedate time.Time
+	ID         int64
+}
+
+func (q *Queries) UpdateIncome(ctx context.Context, arg UpdateIncomeParams) error {
+	_, err := q.db.ExecContext(ctx, updateIncome, arg.Price, arg.Incomedate, arg.ID)
+	return err
+}
+
+const updatePayment = `-- name: UpdatePayment :exec
+UPDATE payments
+SET price = ?, paidDate = ?
+WHERE id = ?
+`
+
+type UpdatePaymentParams struct {
+	Price    float64
+	Paiddate time.Time
+	ID       int64
+}
+
+func (q *Queries) UpdatePayment(ctx context.Context, arg UpdatePaymentParams) error {
+	_, err := q.db.ExecContext(ctx, updatePayment, arg.Price, arg.Paiddate, arg.ID)
+	return err
 }

@@ -9,7 +9,7 @@ type ChartEntry{
 }
 
 type Payment {
-  id: ID!
+  id: Int!
 	date: Time!
 	value: Float!
 	expenseID: Int!
@@ -20,7 +20,7 @@ type Income {
   value: Float
 
   # from paperless
-  paperlessID:   ID!
+  paperlessInt:   Int!
   correspondent: Int!
   title:         String!
   content:       String!
@@ -33,7 +33,7 @@ type Expense {
   value: Float
 
   # from paperless
-  paperlessID:   ID!
+  paperlessID:   Int!
   correspondent: Int!
   title:         String!
   content:       String!
@@ -46,23 +46,24 @@ type Query {
   getIncomes: [Income!]!
   getExpenses: [Expense!]!
   getPayments: [Payment!]!
+  getExpensesBetween(from: String!, to: String!): [ChartEntry!]!
 
-  getIncome(id: ID!): Income!
-  getExpense(id: ID!): Expense!
-  getPayment(id: ID!): Payment!
+  getIncome(id: Int!): Income!
+  getExpense(id: Int!): Expense!
+  getPayment(id: Int!): Payment!
 }
 
 input NewPayment {
 	date: Time!
 	value: Float!
-	expenseId: ID!
+	expenseId: Int!
 }
 
 input UpdatePayment {
-  id: ID!
+  id: Int!
 	date: Time
 	value: Float
-	expenseId: ID
+	expenseId: Int
 }
 
 input UpdateExpense {
@@ -70,7 +71,7 @@ input UpdateExpense {
   value: Float
 
   # from paperless
-  paperlessID:   ID!
+  paperlessID:   Int!
 }
 
 input UpdateIncome {
@@ -78,13 +79,13 @@ input UpdateIncome {
   value: Float
 
   # from paperless
-  paperlessID:   ID!
+  paperlessID:   Int!
 }
 
 type Mutation {
   createPayment(input: NewPayment!): Payment!
   updatePayment(input: UpdatePayment!): Payment!
-  deletePayment(id: ID!): Payment!
+  deletePayment(id: Int!): Payment!
 
   updateExpense(input: UpdateExpense!): Expense!
   updateIncome(input: UpdateIncome!): Income!

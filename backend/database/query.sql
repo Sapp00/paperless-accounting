@@ -18,13 +18,17 @@ ORDER BY id;
 DELETE FROM expenses
 WHERE id = ?;
 
+-- name: UpdateExpense :exec
+UPDATE expenses
+SET price = ?, expenseDate = ?
+WHERE id = ?;
 
 
 -- name: CreatePayment :one
 INSERT INTO payments (
   id, expenseID, price, paidDate
 ) VALUES (
-  ?, ?, ?
+  ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -40,6 +44,10 @@ ORDER BY id;
 DELETE FROM payments
 WHERE id = ?;
 
+-- name: UpdatePayment :exec
+UPDATE payments
+SET price = ?, paidDate = ?
+WHERE id = ?;
 
 
 -- name: CreateIncome :one
@@ -60,4 +68,9 @@ ORDER BY id;
 
 -- name: DeleteIncome :exec
 DELETE FROM incomes
+WHERE id = ?;
+
+-- name: UpdateIncome :exec
+UPDATE incomes
+SET price = ?, incomeDate = ?
 WHERE id = ?;

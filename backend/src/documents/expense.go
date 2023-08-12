@@ -8,6 +8,7 @@ import (
 	"log"
 	"sapp/paperless-accounting/database"
 	"sapp/paperless-accounting/paperless"
+	"time"
 )
 
 type Expense struct {
@@ -58,7 +59,7 @@ func (m *DocumentMgr) GetExpense(id int) (*Expense, error) {
 	return nil, errors.New("documents:expense: could not find the respective id")
 }
 
-func (m *DocumentMgr) GetExpensesInYear(year int) ([]*Expense, error) {
+func (m *DocumentMgr) GetExpensesBetween(fromTimeStr string, toTimeStr string) ([]*Expense, error) {
 	p_result, err := m.paperless.GetDocuments(paperless.Expense)
 	if err != nil {
 		return nil, err
@@ -72,6 +73,25 @@ func (m *DocumentMgr) GetExpensesInYear(year int) ([]*Expense, error) {
 
 	fmt.Printf("db: %v\n", db_result)
 
+	var fromTime time.Time
+	if fromTimeStr == "-1" {
+		fromTime = time.Unix(0, 0)
+	} else {
+		fromTime, err = time.Parse(`"2006-01-02"`, fromTimeStr)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var toTime time.Time
+	if toTimeStr == "0" {
+		toTime = time.Now()
+	} else {
+		toTime, err = time.Parse(`"2006-01-02"`, toTimeStr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	var out []*Expense
 	i := 0
 paper_loop:
@@ -84,7 +104,7 @@ paper_loop:
 			if e_db.ID == int64(e_paper.ID) {
 
 				// not the right year
-				if year != 0 && e_db.Expensedate.Year() != year {
+				if e_db.Expensedate.After(fromTime) && e_db.Expensedate.Before(toTime) {
 					fmt.Printf("doesnt match\n")
 					continue paper_loop
 				}
@@ -150,5 +170,9 @@ paper_loop:
 }
 
 func (m *DocumentMgr) GetExpenses() ([]*Expense, error) {
-	return m.GetExpensesInYear(0)
+	return m.GetExpensesBetween("-1", "0")
+}
+
+func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value *float64) error {
+
 }

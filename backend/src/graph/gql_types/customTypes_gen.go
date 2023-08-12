@@ -6,27 +6,33 @@ import (
 	"sapp/paperless-accounting/paperless"
 )
 
+type ChartEntry struct {
+	Date     paperless.PaperlessTime `json:"date"`
+	Category string                  `json:"category"`
+	Value    float64                 `json:"value"`
+}
+
 type NewPayment struct {
 	Date      paperless.PaperlessTime `json:"date"`
 	Value     float64                 `json:"value"`
-	ExpenseID string                  `json:"expenseId"`
+	ExpenseID int                     `json:"expenseId"`
 }
 
 type UpdateExpense struct {
 	Date        *paperless.PaperlessTime `json:"date,omitempty"`
 	Value       *float64                 `json:"value,omitempty"`
-	PaperlessID string                   `json:"paperlessID"`
+	PaperlessID int                      `json:"paperlessID"`
 }
 
 type UpdateIncome struct {
 	Date        *paperless.PaperlessTime `json:"date,omitempty"`
 	Value       *float64                 `json:"value,omitempty"`
-	PaperlessID string                   `json:"paperlessID"`
+	PaperlessID int                      `json:"paperlessID"`
 }
 
 type UpdatePayment struct {
-	ID        string                   `json:"id"`
+	ID        int                      `json:"id"`
 	Date      *paperless.PaperlessTime `json:"date,omitempty"`
 	Value     *float64                 `json:"value,omitempty"`
-	ExpenseID *string                  `json:"expenseId,omitempty"`
+	ExpenseID *int                     `json:"expenseId,omitempty"`
 }
