@@ -105,7 +105,6 @@ paper_loop:
 
 				// not the right year
 				if e_db.Expensedate.After(fromTime) && e_db.Expensedate.Before(toTime) {
-					fmt.Printf("doesnt match\n")
 					continue paper_loop
 				}
 
@@ -138,7 +137,8 @@ paper_loop:
 		}
 		// didnt find the element -> create a barebone
 		if !found {
-			// create expense because none has been found
+			// create expense because none has been found.
+			// TODO: this should be moved to the cron!
 			_, err := m.db.CreateExpense(ctx, database.CreateExpenseParams{
 				ID:          int64(e_paper.ID),
 				Price:       sql.NullFloat64{},
@@ -148,19 +148,6 @@ paper_loop:
 				return nil, err
 			}
 			log.Printf("Added entry %d to database\n", e_paper.ID)
-			/*
-				expense := Expense{
-					Date:          *paperless.NewPaperlessTime(time.Unix(0, 0)),
-					Value:         float64(0),
-					PaperlessID:   e_paper.ID,
-					Correspondent: e_paper.CorrespondentID,
-					Title:         e_paper.Title,
-					Content:       e_paper.Content,
-					Tags:          e_paper.Tags,
-					Created_date:  e_paper.Created_date,
-				}
-				// add to output and set start for next loop
-				out = append(out, expense)*/
 		}
 	}
 
@@ -173,6 +160,20 @@ func (m *DocumentMgr) GetExpenses() ([]*Expense, error) {
 	return m.GetExpensesBetween("-1", "0")
 }
 
-func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value *float64) error {
+func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value *float64) (*Expense, error) {
+	exp, err := m.GetExpense(id)
+	if err != nil {
+		return nil, errors.New("expense cannot be updated because it does not exist. create it first")
+	}
+	if date != nil {
+		exp.Date = *date
+	}
+	if value != nil {
+		exp.Value = *value
+	}
 
+	ctx := context.Background()
+	m.db.UpdateExpense(ctx, database.UpdateExpenseParams{Price: sql.NullFloat64{Valid: true, Float64: exp.Value}, Expensedate: exp.Date.Time, ID: int64(id)})
+
+	return exp, nil
 }

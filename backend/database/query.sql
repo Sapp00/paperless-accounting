@@ -52,9 +52,9 @@ WHERE id = ?;
 
 -- name: CreateIncome :one
 INSERT INTO incomes (
-  price, incomeDate
+  id, price, incomeDate
 ) VALUES (
-  ?, ?
+  ?, ?, ?
 )
 RETURNING *;
 

@@ -70,6 +70,8 @@ func (p *Paperless) GetDocument(typ DocumentType, id int) (*PaperlessDocument, e
 			return nil, nil
 		}
 		return nil, err
+	} else if len(val) == 0 {
+		return nil, nil
 	}
 
 	var res PaperlessDocument

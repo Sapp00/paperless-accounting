@@ -100,7 +100,7 @@ func paperlessQueryExecute[R paperlessResponse, RR paperlessResponseResult](conf
 	return out, nil
 }
 
-func (p *Paperless) paperlessDocumentQuery(query string) ([]PaperlessDocument, error) {
+func (p *Paperless) PaperlessDocumentQuery(query string) ([]PaperlessDocument, error) {
 	//var out []PaperlessDocument
 
 	out, err := paperlessQueryExecute[paperlessDocumentResponse, PaperlessDocument](p.conf, query, "/api/documents/", true)
@@ -116,7 +116,7 @@ func (p *Paperless) paperlessDocumentQuery(query string) ([]PaperlessDocument, e
 	return out, nil
 }
 
-func (p *Paperless) paperlessCorrespondentList() ([]PaperlessCorrespondent, error) {
+func (p *Paperless) PaperlessCorrespondentList() ([]PaperlessCorrespondent, error) {
 	//var out []PaperlessDocument
 
 	out, err := paperlessQueryExecute[paperlessCorrespondentResponse, PaperlessCorrespondent](p.conf, "", "/api/documents/", true)

@@ -36,7 +36,7 @@ func (r *mutationResolver) DeletePayment(ctx context.Context, id int) (*document
 
 // UpdateExpense is the resolver for the updateExpense field.
 func (r *mutationResolver) UpdateExpense(ctx context.Context, input gql_types.UpdateExpense) (*documents.Expense, error) {
-	panic(fmt.Errorf("not implemented: UpdateExpense - updateExpense"))
+	return r.Dm.UpdateExpense(input.PaperlessID, input.Date, input.Value)
 }
 
 // UpdateIncome is the resolver for the updateIncome field.
