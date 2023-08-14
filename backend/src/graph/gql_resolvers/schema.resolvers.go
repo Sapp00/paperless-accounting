@@ -14,11 +14,6 @@ import (
 	"sort"
 )
 
-// PaperlessInt is the resolver for the paperlessInt field.
-func (r *incomeResolver) PaperlessInt(ctx context.Context, obj *documents.Income) (int, error) {
-	panic(fmt.Errorf("not implemented: PaperlessInt - paperlessInt"))
-}
-
 // CreatePayment is the resolver for the createPayment field.
 func (r *mutationResolver) CreatePayment(ctx context.Context, input gql_types.NewPayment) (*documents.Payment, error) {
 	panic(fmt.Errorf("not implemented: CreatePayment - createPayment"))
@@ -36,12 +31,12 @@ func (r *mutationResolver) DeletePayment(ctx context.Context, id int) (*document
 
 // UpdateExpense is the resolver for the updateExpense field.
 func (r *mutationResolver) UpdateExpense(ctx context.Context, input gql_types.UpdateExpense) (*documents.Expense, error) {
-	return r.Dm.UpdateExpense(input.PaperlessID, input.Date, input.Value)
+	return r.Dm.UpdateExpense(int64(input.PaperlessID), input.Date, input.Value)
 }
 
 // UpdateIncome is the resolver for the updateIncome field.
 func (r *mutationResolver) UpdateIncome(ctx context.Context, input gql_types.UpdateIncome) (*documents.Income, error) {
-	panic(fmt.Errorf("not implemented: UpdateIncome - updateIncome"))
+	return r.Dm.UpdateIncome(input.PaperlessID, input.Date, input.Value)
 }
 
 // Value is the resolver for the value field.
@@ -65,16 +60,11 @@ func (r *queryResolver) GetPayments(ctx context.Context) ([]*documents.Payment, 
 }
 
 // GetExpensesBetween is the resolver for the getExpensesBetween field.
-func (r *queryResolver) GetExpensesBetween(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error) {
+func (r *queryResolver) GetExpensesBetweenPerDay(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error) {
 	all_expenses, err := r.Dm.GetExpensesBetween(from, to)
 	if err != nil {
 		log.Fatalf("Error occured when retrieving expenses: %s\n", err.Error())
 	}
-
-	// TODO: implement this
-	all_payments := all_expenses
-
-	fmt.Printf("implement me! all_payments\n")
 
 	if err != nil {
 		log.Fatalf("Error occured: %s", err.Error())
@@ -85,12 +75,7 @@ func (r *queryResolver) GetExpensesBetween(ctx context.Context, from string, to 
 		return all_expenses[i].Created_date.Before(all_expenses[j].Created_date.Time)
 	})
 
-	/*
-		sort.SliceStable(all_payments, func(i, j int) bool {
-			return all_payments[i].Created_date.Before(all_payments[j].Created_date.Time)
-		})*/
-
-	out := make([]*gql_types.ChartEntry, len(all_expenses)+len(all_payments))
+	out := make([]*gql_types.ChartEntry, len(all_expenses))
 
 	// create entries for expenses
 	var expense_sum float64 = 0
@@ -111,26 +96,6 @@ func (r *queryResolver) GetExpensesBetween(ctx context.Context, from string, to 
 	}
 	// is empty or has an expense?
 	if len(all_expenses) > 0 && out[i] == nil {
-		i++
-	}
-	// create entries for payments
-	var paid_sum float64 = 0
-	for _, e := range all_payments {
-		// TODO: change created date! needs to be based on paid_date which is retrieved from the database
-		var e_paid_val float64 = float64(e.Value)
-		e_paid_date := e.Date
-
-		// update expense
-		paid_sum += e_paid_val
-		if i != 0 && out[i-1].Date == e_paid_date {
-			out[i-1].Value = paid_sum
-		} else {
-			out[i] = &gql_types.ChartEntry{Date: e_paid_date, Category: "payment", Value: paid_sum}
-			i++
-		}
-	}
-	// is empty or has an expense?
-	if len(all_payments) > 0 && out[i] != nil {
 		i--
 	}
 
@@ -139,23 +104,35 @@ func (r *queryResolver) GetExpensesBetween(ctx context.Context, from string, to 
 	return outputTruncated, nil
 }
 
+// GetIncomesBetweenPerDay is the resolver for the getIncomesBetweenPerDay field.
+func (r *queryResolver) GetIncomesBetweenPerDay(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error) {
+	panic(fmt.Errorf("not implemented: GetIncomesBetweenPerDay - getIncomesBetweenPerDay"))
+}
+
+// GetExpensesBetween is the resolver for the getExpensesBetween field.
+func (r *queryResolver) GetExpensesBetween(ctx context.Context, from string, to string) ([]*documents.Expense, error) {
+	return r.Dm.GetExpensesBetween(from, to)
+}
+
+// GetIncomesBetween is the resolver for the getIncomesBetween field.
+func (r *queryResolver) GetIncomesBetween(ctx context.Context, from string, to string) ([]*documents.Income, error) {
+	return r.Dm.GetIncomesBetween(from, to)
+}
+
 // GetIncome is the resolver for the getIncome field.
 func (r *queryResolver) GetIncome(ctx context.Context, id int) (*documents.Income, error) {
-	panic(fmt.Errorf("not implemented: GetIncome - getIncome"))
+	return r.Dm.GetIncome(id)
 }
 
 // GetExpense is the resolver for the getExpense field.
 func (r *queryResolver) GetExpense(ctx context.Context, id int) (*documents.Expense, error) {
-	panic(fmt.Errorf("not implemented: GetExpense - getExpense"))
+	return r.Dm.GetExpense(int64(id))
 }
 
 // GetPayment is the resolver for the getPayment field.
 func (r *queryResolver) GetPayment(ctx context.Context, id int) (*documents.Payment, error) {
 	panic(fmt.Errorf("not implemented: GetPayment - getPayment"))
 }
-
-// Income returns gql_generated.IncomeResolver implementation.
-func (r *Resolver) Income() gql_generated.IncomeResolver { return &incomeResolver{r} }
 
 // Mutation returns gql_generated.MutationResolver implementation.
 func (r *Resolver) Mutation() gql_generated.MutationResolver { return &mutationResolver{r} }
@@ -166,7 +143,6 @@ func (r *Resolver) Payment() gql_generated.PaymentResolver { return &paymentReso
 // Query returns gql_generated.QueryResolver implementation.
 func (r *Resolver) Query() gql_generated.QueryResolver { return &queryResolver{r} }
 
-type incomeResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type paymentResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

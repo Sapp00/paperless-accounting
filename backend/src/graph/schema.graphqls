@@ -20,7 +20,7 @@ type Income {
   value: Float
 
   # from paperless
-  paperlessInt:   Int!
+  paperlessID:   Int!
   correspondent: Int!
   title:         String!
   content:       String!
@@ -46,7 +46,10 @@ type Query {
   getIncomes: [Income!]!
   getExpenses: [Expense!]!
   getPayments: [Payment!]!
-  getExpensesBetween(from: String!, to: String!): [ChartEntry!]!
+  getExpensesBetweenPerDay(from: String!, to: String!): [ChartEntry!]!
+  getIncomesBetweenPerDay(from: String!, to: String!): [ChartEntry!]!
+  getExpensesBetween(from: String!, to: String!): [Expense!]!
+  getIncomesBetween(from: String!, to: String!): [Income!]!
 
   getIncome(id: Int!): Income!
   getExpense(id: Int!): Expense!

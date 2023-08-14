@@ -1,1 +1,2 @@
-- need to add db sync to paperless cron
+- need to add db sync to paperless cron (remove old entries)
+- add entires to redis with score=date

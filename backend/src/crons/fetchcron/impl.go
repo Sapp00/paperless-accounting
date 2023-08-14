@@ -36,6 +36,8 @@ func (p PaperlessCron) Run() {
 	}
 
 	ctx := context.Background()
+
+	expense_map := make(map[int64][]documents.Expense)
 	for _, e := range all_expenses {
 
 		e_db, err := p.db.GetExpense(ctx, int64(e.ID))
@@ -77,19 +79,23 @@ func (p PaperlessCron) Run() {
 			panic(err)
 		}
 
-		// store id
+		// store by id
 		err = p.client.ZAdd(ctx, "expenses", redis.Z{Score: float64(e.ID), Member: ej}).Err()
 		if err != nil {
 			panic(err)
 		}
+
+		time := exp.Date.Unix()
+		expense_map[time] = append(expense_map[time], exp)
 	}
 
+	income_map := make(map[int64][]documents.Income)
 	for _, e := range all_incomes {
 
 		e_db, err := p.db.GetIncome(ctx, int64(e.ID))
 		if err != nil {
 			// not found, create DB entry
-			if err.Error() == "redis: nil" {
+			if err.Error() == "sql: no rows in result set" {
 				e_db, err = p.db.CreateIncome(ctx, database.CreateIncomeParams{
 					ID:         int64(e.ID),
 					Price:      sql.NullFloat64{},
@@ -109,7 +115,7 @@ func (p PaperlessCron) Run() {
 			e_price = e_db.Price.Float64
 		}
 
-		exp := documents.Expense{
+		inc := documents.Income{
 			Date:          *paperless.NewPaperlessTime(e_db.Incomedate),
 			Value:         e_price,
 			PaperlessID:   e.ID,
@@ -120,7 +126,7 @@ func (p PaperlessCron) Run() {
 			Created_date:  e.Created_date,
 		}
 
-		ej, err := json.Marshal(&exp)
+		ej, err := json.Marshal(&inc)
 		if err != nil {
 			panic(err)
 		}
@@ -130,9 +136,36 @@ func (p PaperlessCron) Run() {
 		if err != nil {
 			panic(err)
 		}
+
+		time := inc.Date.Unix()
+		income_map[time] = append(income_map[time], inc)
+	}
+
+	for k, v := range expense_map {
+		ej, err := json.Marshal(&v)
+		if err != nil {
+			panic(err)
+		}
+		err = p.client.ZAdd(ctx, "expenses_by_date", redis.Z{Score: float64(k), Member: ej}).Err()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	for k, v := range income_map {
+		ej, err := json.Marshal(&v)
+		if err != nil {
+			panic(err)
+		}
+		err = p.client.ZAdd(ctx, "incomes_by_date", redis.Z{Score: float64(k), Member: ej}).Err()
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// expiry time = 5min
+	p.client.Expire(ctx, "expenses_by_date", time.Minute*5)
+	p.client.Expire(ctx, "incomes_by_date", time.Minute*5)
 	p.client.Expire(ctx, "expenses", time.Minute*5)
 	p.client.Expire(ctx, "incomes", time.Minute*5)
 
@@ -169,6 +202,12 @@ func StartCron(conf *config.Config) (*crons.Cronjob, error) {
 		paperless: pl,
 		conf:      conf,
 	}
+	err = p.setupDB()
+	if err != nil {
+		return nil, err
+	}
+	log.Print("Set up DB successful")
+
 	c := crons.Start(p)
 
 	return c, nil

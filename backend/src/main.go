@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"sapp/paperless-accounting/config"
+	"sapp/paperless-accounting/crons/fetchcron"
 	"sapp/paperless-accounting/documents"
 	"sapp/paperless-accounting/graph/gql_generated"
 	"sapp/paperless-accounting/graph/gql_resolvers"
-	"sapp/paperless-accounting/paperless"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	paperless.StartCron(conf)
+	fetchcron.StartCron(conf)
 
 	doc, err := documents.NewManager(conf)
 	if err != nil {

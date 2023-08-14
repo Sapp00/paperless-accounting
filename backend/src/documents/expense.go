@@ -3,12 +3,15 @@ package documents
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"sapp/paperless-accounting/database"
 	"sapp/paperless-accounting/paperless"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Expense struct {
@@ -25,59 +28,43 @@ type Expense struct {
 	Created_date  paperless.PaperlessTime
 }
 
-func (m *DocumentMgr) GetExpense(id int) (*Expense, error) {
-	e, err := m.paperless.GetDocument(paperless.Expense, id)
-	if err != nil {
-		return nil, err
-	}
-
+func (m *DocumentMgr) GetExpense(id int64) (*Expense, error) {
 	ctx := context.Background()
-	e_db, err := m.db.GetExpense(ctx, int64(id))
+
+	val, err := m.client.ZRangeByScore(ctx, "expenses", &redis.ZRangeBy{
+		Min:   fmt.Sprint(id),
+		Max:   fmt.Sprint(id),
+		Count: 1,
+	}).Result()
+
+	if err != nil {
+		if err.Error() == "redis: nil" {
+			return nil, nil
+		}
+		return nil, err
+	} else if len(val) == 0 {
+		return nil, nil
+	}
+
+	var res Expense
+	err = json.Unmarshal([]byte(val[0]), &res)
+
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("res: %v\n", e_db)
-
-	e_price := float64(0)
-	if e_db.Price.Valid {
-		e_price = e_db.Price.Float64
-	}
-
-	// merge data
-	return &Expense{
-		Date:          *paperless.NewPaperlessTime(e_db.Expensedate),
-		Value:         e_price,
-		PaperlessID:   e.ID,
-		Correspondent: e.CorrespondentID,
-		Title:         e.Title,
-		Content:       e.Content,
-		Tags:          e.Tags,
-		Created_date:  e.Created_date,
-	}, nil
-
-	return nil, errors.New("documents:expense: could not find the respective id")
+	return &res, nil
 }
 
 func (m *DocumentMgr) GetExpensesBetween(fromTimeStr string, toTimeStr string) ([]*Expense, error) {
-	p_result, err := m.paperless.GetDocuments(paperless.Expense)
-	if err != nil {
-		return nil, err
-	}
-
 	ctx := context.Background()
-	db_result, err := m.db.ListExpenses(ctx)
-	if err != nil {
-		return nil, err
-	}
 
-	fmt.Printf("db: %v\n", db_result)
-
+	var err error
 	var fromTime time.Time
 	if fromTimeStr == "-1" {
 		fromTime = time.Unix(0, 0)
 	} else {
-		fromTime, err = time.Parse(`"2006-01-02"`, fromTimeStr)
+		fromTime, err = time.Parse("2006-01-02", fromTimeStr)
 		if err != nil {
 			return nil, err
 		}
@@ -86,81 +73,48 @@ func (m *DocumentMgr) GetExpensesBetween(fromTimeStr string, toTimeStr string) (
 	if toTimeStr == "0" {
 		toTime = time.Now()
 	} else {
-		toTime, err = time.Parse(`"2006-01-02"`, toTimeStr)
+		toTime, err = time.Parse("2006-01-02", toTimeStr)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	var out []*Expense
-	i := 0
-paper_loop:
-	for _, e_paper := range p_result {
-		found := false
-		fmt.Printf("Searching for %v\n", e_paper.ID)
-		for ; i < len(db_result); i++ {
-			e_db := db_result[i]
+	val, err := m.client.ZRangeByScore(ctx, "expenses_by_date", &redis.ZRangeBy{
+		Min: fmt.Sprint(fromTime.Unix()),
+		Max: fmt.Sprint(toTime.Unix()),
+	}).Result()
 
-			if e_db.ID == int64(e_paper.ID) {
-
-				// not the right year
-				if e_db.Expensedate.After(fromTime) && e_db.Expensedate.Before(toTime) {
-					continue paper_loop
-				}
-
-				// check validity
-				e_price := float64(0)
-				if e_db.Price.Valid {
-					e_price = e_db.Price.Float64
-				}
-
-				// merge data
-				expense := &Expense{
-					Date:          *paperless.NewPaperlessTime(e_db.Expensedate),
-					Value:         e_price,
-					PaperlessID:   e_paper.ID,
-					Correspondent: e_paper.CorrespondentID,
-					Title:         e_paper.Title,
-					Content:       e_paper.Content,
-					Tags:          e_paper.Tags,
-					Created_date:  e_paper.Created_date,
-				}
-				// add to output and set start for next loop
-				out = append(out, expense)
-				i++
-				found = true
-				break
-			}
-			if e_db.ID > int64(e_paper.ID) {
-				break
-			}
+	if err != nil {
+		if err.Error() == "redis: nil" {
+			return nil, nil
 		}
-		// didnt find the element -> create a barebone
-		if !found {
-			// create expense because none has been found.
-			// TODO: this should be moved to the cron!
-			_, err := m.db.CreateExpense(ctx, database.CreateExpenseParams{
-				ID:          int64(e_paper.ID),
-				Price:       sql.NullFloat64{},
-				Expensedate: e_paper.Created_date.Time,
-			})
-			if err != nil {
-				return nil, err
-			}
-			log.Printf("Added entry %d to database\n", e_paper.ID)
+		return nil, err
+	}
+
+	log.Printf("From %v to %v: Got %d results\n", fromTime.Unix(), toTime.Unix(), len(val))
+
+	var res []*Expense
+
+	for _, v := range val {
+		var p []Expense
+		err = json.Unmarshal([]byte(v), &p)
+
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range p {
+			res = append(res, &r)
 		}
 	}
 
-	fmt.Printf("out: %v\n", out)
-
-	return out, err
+	return res, nil
 }
 
 func (m *DocumentMgr) GetExpenses() ([]*Expense, error) {
 	return m.GetExpensesBetween("-1", "0")
 }
 
-func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value *float64) (*Expense, error) {
+func (m *DocumentMgr) UpdateExpense(id int64, date *paperless.PaperlessTime, value *float64) (*Expense, error) {
 	exp, err := m.GetExpense(id)
 	if err != nil {
 		return nil, errors.New("expense cannot be updated because it does not exist. create it first")
@@ -174,6 +128,16 @@ func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value
 
 	ctx := context.Background()
 	m.db.UpdateExpense(ctx, database.UpdateExpenseParams{Price: sql.NullFloat64{Valid: true, Float64: exp.Value}, Expensedate: exp.Date.Time, ID: int64(id)})
+
+	ej, err := json.Marshal(&exp)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.client.ZAdd(ctx, "incomes", redis.Z{Score: float64(exp.PaperlessID), Member: ej}).Err()
+	if err != nil {
+		return nil, err
+	}
 
 	return exp, nil
 }

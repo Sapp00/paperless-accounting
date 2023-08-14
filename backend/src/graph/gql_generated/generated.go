@@ -38,7 +38,6 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	Income() IncomeResolver
 	Mutation() MutationResolver
 	Payment() PaymentResolver
 	Query() QueryResolver
@@ -70,7 +69,7 @@ type ComplexityRoot struct {
 		Correspondent func(childComplexity int) int
 		Created_date  func(childComplexity int) int
 		Date          func(childComplexity int) int
-		PaperlessInt  func(childComplexity int) int
+		PaperlessID   func(childComplexity int) int
 		Tags          func(childComplexity int) int
 		Title         func(childComplexity int) int
 		Value         func(childComplexity int) int
@@ -92,19 +91,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetExpense         func(childComplexity int, id int) int
-		GetExpenses        func(childComplexity int) int
-		GetExpensesBetween func(childComplexity int, from string, to string) int
-		GetIncome          func(childComplexity int, id int) int
-		GetIncomes         func(childComplexity int) int
-		GetPayment         func(childComplexity int, id int) int
-		GetPayments        func(childComplexity int) int
+		GetExpense               func(childComplexity int, id int) int
+		GetExpenses              func(childComplexity int) int
+		GetExpensesBetween       func(childComplexity int, from string, to string) int
+		GetExpensesBetweenPerDay func(childComplexity int, from string, to string) int
+		GetIncome                func(childComplexity int, id int) int
+		GetIncomes               func(childComplexity int) int
+		GetIncomesBetween        func(childComplexity int, from string, to string) int
+		GetIncomesBetweenPerDay  func(childComplexity int, from string, to string) int
+		GetPayment               func(childComplexity int, id int) int
+		GetPayments              func(childComplexity int) int
 	}
 }
 
-type IncomeResolver interface {
-	PaperlessInt(ctx context.Context, obj *documents.Income) (int, error)
-}
 type MutationResolver interface {
 	CreatePayment(ctx context.Context, input gql_types.NewPayment) (*documents.Payment, error)
 	UpdatePayment(ctx context.Context, input gql_types.UpdatePayment) (*documents.Payment, error)
@@ -119,7 +118,10 @@ type QueryResolver interface {
 	GetIncomes(ctx context.Context) ([]*documents.Income, error)
 	GetExpenses(ctx context.Context) ([]*documents.Expense, error)
 	GetPayments(ctx context.Context) ([]*documents.Payment, error)
-	GetExpensesBetween(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error)
+	GetExpensesBetweenPerDay(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error)
+	GetIncomesBetweenPerDay(ctx context.Context, from string, to string) ([]*gql_types.ChartEntry, error)
+	GetExpensesBetween(ctx context.Context, from string, to string) ([]*documents.Expense, error)
+	GetIncomesBetween(ctx context.Context, from string, to string) ([]*documents.Income, error)
 	GetIncome(ctx context.Context, id int) (*documents.Income, error)
 	GetExpense(ctx context.Context, id int) (*documents.Expense, error)
 	GetPayment(ctx context.Context, id int) (*documents.Payment, error)
@@ -245,12 +247,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Income.Date(childComplexity), true
 
-	case "Income.paperlessInt":
-		if e.complexity.Income.PaperlessInt == nil {
+	case "Income.paperlessID":
+		if e.complexity.Income.PaperlessID == nil {
 			break
 		}
 
-		return e.complexity.Income.PaperlessInt(childComplexity), true
+		return e.complexity.Income.PaperlessID(childComplexity), true
 
 	case "Income.tags":
 		if e.complexity.Income.Tags == nil {
@@ -392,6 +394,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetExpensesBetween(childComplexity, args["from"].(string), args["to"].(string)), true
 
+	case "Query.getExpensesBetweenPerDay":
+		if e.complexity.Query.GetExpensesBetweenPerDay == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getExpensesBetweenPerDay_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetExpensesBetweenPerDay(childComplexity, args["from"].(string), args["to"].(string)), true
+
 	case "Query.getIncome":
 		if e.complexity.Query.GetIncome == nil {
 			break
@@ -410,6 +424,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetIncomes(childComplexity), true
+
+	case "Query.getIncomesBetween":
+		if e.complexity.Query.GetIncomesBetween == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getIncomesBetween_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetIncomesBetween(childComplexity, args["from"].(string), args["to"].(string)), true
+
+	case "Query.getIncomesBetweenPerDay":
+		if e.complexity.Query.GetIncomesBetweenPerDay == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getIncomesBetweenPerDay_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetIncomesBetweenPerDay(childComplexity, args["from"].(string), args["to"].(string)), true
 
 	case "Query.getPayment":
 		if e.complexity.Query.GetPayment == nil {
@@ -561,7 +599,7 @@ type Income {
   value: Float
 
   # from paperless
-  paperlessInt:   Int!
+  paperlessID:   Int!
   correspondent: Int!
   title:         String!
   content:       String!
@@ -587,7 +625,10 @@ type Query {
   getIncomes: [Income!]!
   getExpenses: [Expense!]!
   getPayments: [Payment!]!
-  getExpensesBetween(from: String!, to: String!): [ChartEntry!]!
+  getExpensesBetweenPerDay(from: String!, to: String!): [ChartEntry!]!
+  getIncomesBetweenPerDay(from: String!, to: String!): [ChartEntry!]!
+  getExpensesBetween(from: String!, to: String!): [Expense!]!
+  getIncomesBetween(from: String!, to: String!): [Income!]!
 
   getIncome(id: Int!): Income!
   getExpense(id: Int!): Expense!
@@ -745,6 +786,30 @@ func (ec *executionContext) field_Query_getExpense_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getExpensesBetweenPerDay_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["from"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["from"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["to"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["to"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_getExpensesBetween_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -781,6 +846,54 @@ func (ec *executionContext) field_Query_getIncome_args(ctx context.Context, rawA
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getIncomesBetweenPerDay_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["from"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["from"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["to"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["to"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getIncomesBetween_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["from"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["from"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["to"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["to"] = arg1
 	return args, nil
 }
 
@@ -1338,9 +1451,9 @@ func (ec *executionContext) _Income_date(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*paperless.PaperlessTime)
+	res := resTmp.(paperless.PaperlessTime)
 	fc.Result = res
-	return ec.marshalOTime2ᚖsappᚋpaperlessᚑaccountingᚋpaperlessᚐPaperlessTime(ctx, field.Selections, res)
+	return ec.marshalOTime2sappᚋpaperlessᚑaccountingᚋpaperlessᚐPaperlessTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Income_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1397,8 +1510,8 @@ func (ec *executionContext) fieldContext_Income_value(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Income_paperlessInt(ctx context.Context, field graphql.CollectedField, obj *documents.Income) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Income_paperlessInt(ctx, field)
+func (ec *executionContext) _Income_paperlessID(ctx context.Context, field graphql.CollectedField, obj *documents.Income) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Income_paperlessID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1411,7 +1524,7 @@ func (ec *executionContext) _Income_paperlessInt(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Income().PaperlessInt(rctx, obj)
+		return obj.PaperlessID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1428,12 +1541,12 @@ func (ec *executionContext) _Income_paperlessInt(ctx context.Context, field grap
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Income_paperlessInt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Income_paperlessID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Income",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -1972,8 +2085,8 @@ func (ec *executionContext) fieldContext_Mutation_updateIncome(ctx context.Conte
 				return ec.fieldContext_Income_date(ctx, field)
 			case "value":
 				return ec.fieldContext_Income_value(ctx, field)
-			case "paperlessInt":
-				return ec.fieldContext_Income_paperlessInt(ctx, field)
+			case "paperlessID":
+				return ec.fieldContext_Income_paperlessID(ctx, field)
 			case "correspondent":
 				return ec.fieldContext_Income_correspondent(ctx, field)
 			case "title":
@@ -2221,8 +2334,8 @@ func (ec *executionContext) fieldContext_Query_getIncomes(ctx context.Context, f
 				return ec.fieldContext_Income_date(ctx, field)
 			case "value":
 				return ec.fieldContext_Income_value(ctx, field)
-			case "paperlessInt":
-				return ec.fieldContext_Income_paperlessInt(ctx, field)
+			case "paperlessID":
+				return ec.fieldContext_Income_paperlessID(ctx, field)
 			case "correspondent":
 				return ec.fieldContext_Income_correspondent(ctx, field)
 			case "title":
@@ -2356,6 +2469,132 @@ func (ec *executionContext) fieldContext_Query_getPayments(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getExpensesBetweenPerDay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getExpensesBetweenPerDay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetExpensesBetweenPerDay(rctx, fc.Args["from"].(string), fc.Args["to"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*gql_types.ChartEntry)
+	fc.Result = res
+	return ec.marshalNChartEntry2ᚕᚖsappᚋpaperlessᚑaccountingᚋgraphᚋgql_typesᚐChartEntryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getExpensesBetweenPerDay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "date":
+				return ec.fieldContext_ChartEntry_date(ctx, field)
+			case "category":
+				return ec.fieldContext_ChartEntry_category(ctx, field)
+			case "value":
+				return ec.fieldContext_ChartEntry_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChartEntry", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getExpensesBetweenPerDay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getIncomesBetweenPerDay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getIncomesBetweenPerDay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetIncomesBetweenPerDay(rctx, fc.Args["from"].(string), fc.Args["to"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*gql_types.ChartEntry)
+	fc.Result = res
+	return ec.marshalNChartEntry2ᚕᚖsappᚋpaperlessᚑaccountingᚋgraphᚋgql_typesᚐChartEntryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getIncomesBetweenPerDay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "date":
+				return ec.fieldContext_ChartEntry_date(ctx, field)
+			case "category":
+				return ec.fieldContext_ChartEntry_category(ctx, field)
+			case "value":
+				return ec.fieldContext_ChartEntry_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChartEntry", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getIncomesBetweenPerDay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getExpensesBetween(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getExpensesBetween(ctx, field)
 	if err != nil {
@@ -2382,9 +2621,9 @@ func (ec *executionContext) _Query_getExpensesBetween(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*gql_types.ChartEntry)
+	res := resTmp.([]*documents.Expense)
 	fc.Result = res
-	return ec.marshalNChartEntry2ᚕᚖsappᚋpaperlessᚑaccountingᚋgraphᚋgql_typesᚐChartEntryᚄ(ctx, field.Selections, res)
+	return ec.marshalNExpense2ᚕᚖsappᚋpaperlessᚑaccountingᚋdocumentsᚐExpenseᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_getExpensesBetween(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2396,13 +2635,23 @@ func (ec *executionContext) fieldContext_Query_getExpensesBetween(ctx context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "date":
-				return ec.fieldContext_ChartEntry_date(ctx, field)
-			case "category":
-				return ec.fieldContext_ChartEntry_category(ctx, field)
+				return ec.fieldContext_Expense_date(ctx, field)
 			case "value":
-				return ec.fieldContext_ChartEntry_value(ctx, field)
+				return ec.fieldContext_Expense_value(ctx, field)
+			case "paperlessID":
+				return ec.fieldContext_Expense_paperlessID(ctx, field)
+			case "correspondent":
+				return ec.fieldContext_Expense_correspondent(ctx, field)
+			case "title":
+				return ec.fieldContext_Expense_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Expense_content(ctx, field)
+			case "tags":
+				return ec.fieldContext_Expense_tags(ctx, field)
+			case "created_date":
+				return ec.fieldContext_Expense_created_date(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ChartEntry", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Expense", field.Name)
 		},
 	}
 	defer func() {
@@ -2413,6 +2662,79 @@ func (ec *executionContext) fieldContext_Query_getExpensesBetween(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getExpensesBetween_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getIncomesBetween(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getIncomesBetween(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetIncomesBetween(rctx, fc.Args["from"].(string), fc.Args["to"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*documents.Income)
+	fc.Result = res
+	return ec.marshalNIncome2ᚕᚖsappᚋpaperlessᚑaccountingᚋdocumentsᚐIncomeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getIncomesBetween(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "date":
+				return ec.fieldContext_Income_date(ctx, field)
+			case "value":
+				return ec.fieldContext_Income_value(ctx, field)
+			case "paperlessID":
+				return ec.fieldContext_Income_paperlessID(ctx, field)
+			case "correspondent":
+				return ec.fieldContext_Income_correspondent(ctx, field)
+			case "title":
+				return ec.fieldContext_Income_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Income_content(ctx, field)
+			case "tags":
+				return ec.fieldContext_Income_tags(ctx, field)
+			case "created_date":
+				return ec.fieldContext_Income_created_date(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Income", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getIncomesBetween_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2462,8 +2784,8 @@ func (ec *executionContext) fieldContext_Query_getIncome(ctx context.Context, fi
 				return ec.fieldContext_Income_date(ctx, field)
 			case "value":
 				return ec.fieldContext_Income_value(ctx, field)
-			case "paperlessInt":
-				return ec.fieldContext_Income_paperlessInt(ctx, field)
+			case "paperlessID":
+				return ec.fieldContext_Income_paperlessID(ctx, field)
 			case "correspondent":
 				return ec.fieldContext_Income_correspondent(ctx, field)
 			case "title":
@@ -4869,66 +5191,35 @@ func (ec *executionContext) _Income(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Income_date(ctx, field, obj)
 		case "value":
 			out.Values[i] = ec._Income_value(ctx, field, obj)
-		case "paperlessInt":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Income_paperlessInt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+		case "paperlessID":
+			out.Values[i] = ec._Income_paperlessID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "correspondent":
 			out.Values[i] = ec._Income_correspondent(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "title":
 			out.Values[i] = ec._Income_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "content":
 			out.Values[i] = ec._Income_content(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "tags":
 			out.Values[i] = ec._Income_tags(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "created_date":
 			out.Values[i] = ec._Income_created_date(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5200,6 +5491,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getExpensesBetweenPerDay":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getExpensesBetweenPerDay(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getIncomesBetweenPerDay":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getIncomesBetweenPerDay(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getExpensesBetween":
 			field := field
 
@@ -5210,6 +5545,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getExpensesBetween(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getIncomesBetween":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getIncomesBetween(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
