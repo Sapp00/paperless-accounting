@@ -28,7 +28,7 @@ type Expense struct {
 	Created_date  paperless.PaperlessTime
 }
 
-func (m *DocumentMgr) GetExpense(id int64) (*Expense, error) {
+func (m *DocumentMgr) GetExpense(id int) (*Expense, error) {
 	ctx := context.Background()
 
 	val, err := m.client.ZRangeByScore(ctx, "expenses", &redis.ZRangeBy{
@@ -114,7 +114,7 @@ func (m *DocumentMgr) GetExpenses() ([]*Expense, error) {
 	return m.GetExpensesBetween("-1", "0")
 }
 
-func (m *DocumentMgr) UpdateExpense(id int64, date *paperless.PaperlessTime, value *float64) (*Expense, error) {
+func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value *float64) (*Expense, error) {
 	exp, err := m.GetExpense(id)
 	if err != nil {
 		return nil, errors.New("expense cannot be updated because it does not exist. create it first")

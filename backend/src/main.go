@@ -5,33 +5,8 @@ import (
 	"os"
 	"sapp/paperless-accounting/config"
 	"sapp/paperless-accounting/crons/fetchcron"
-	"sapp/paperless-accounting/documents"
-	"sapp/paperless-accounting/graph/gql_generated"
-	"sapp/paperless-accounting/graph/gql_resolvers"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/gin-gonic/gin"
+	"sapp/paperless-accounting/routes"
 )
-
-const defaultPort = "8080"
-
-func graphqlHandler(doc *documents.DocumentMgr) gin.HandlerFunc {
-	rslv := gql_resolvers.Resolver{Dm: doc}
-	h := handler.NewDefaultServer(gql_generated.NewExecutableSchema(gql_generated.Config{Resolvers: &rslv}))
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
-// Defining the Playground handler
-func playgroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/query")
-
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
 
 func main() {
 	conf, err := config.New()
@@ -43,14 +18,18 @@ func main() {
 
 	fetchcron.StartCron(conf)
 
-	doc, err := documents.NewManager(conf)
+	routes, err := routes.New(conf)
+
 	if err != nil {
-		panic(err)
+		fmt.Printf("cannot setup server %s\n", err)
+		os.Exit(1)
 	}
 
-	// Setting up Gin
-	r := gin.Default()
-	r.POST("/query", graphqlHandler(doc))
-	r.GET("/", playgroundHandler())
-	r.Run()
+	err = routes.Setup()
+
+	if err != nil {
+		fmt.Printf("cannot start server %s\n", err)
+		os.Exit(1)
+	}
+
 }
