@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { PageData } from './$types';  
+    import type { PageData } from './[id]/$types';  
     import { onMount } from "svelte";
     import * as d3 from 'd3';
-	import type { DataType, ItemType } from './+page';
+	import type { Expense } from './+page';
 
 	export let data: PageData;
     const { item, error }: DataType = data;

@@ -7,12 +7,12 @@
     import { tableMapperValues, type TableSource } from '@skeletonlabs/skeleton';
 
 	export let data: PageData;
-    const { items, error, fromDate, toDate } = data;
+    const { items, expenses, error, fromDate, toDate } = data;
 
     type ChartEntry = {
-        date: number,
-        category: string,
-        value: number
+        date: String,
+        category: String,
+        value: Number
     };
 
     onMount(() => {
@@ -29,6 +29,8 @@
 
         var keys = "date";
 
+        var d3data: ChartEntry[];
+
         var color = d3.scaleOrdinal()
             .domain(keys)
             .range(d3.schemeSet2);
@@ -36,7 +38,7 @@
         // Add X axis
         const timeParse = d3.timeParse("%Y-%b-%d");
         var x = d3.scaleTime()
-            .domain([new Date(2022, 0, 1), Date.now()])
+            .domain([new Date(items[0].date), new Date(items[items!.length-1].date) ])
             .range([ margin.left, width - margin.right ]);
         const xAxis = (g, x) => g 
             .call(d3.axisBottom(x).ticks( width / 80).tickSizeOuter(0));
@@ -92,9 +94,9 @@
         // A list of heading labels.
         head: ['Date', 'Title', 'Weight'],
         // The data visibly shown in your table body UI.
-        body: tableMapperValues(items, ['Date', 'Title', 'Value']),
+        body: tableMapperValues(expenses, ['Date', 'Title', 'Value']),
         // Optional: The data returned when interactive is enabled and a row is clicked.
-        meta: tableMapperValues(items, ['PaperlessID', 'Date', 'Title', 'Value']),
+        meta: tableMapperValues(expenses, ['PaperlessID', 'Date', 'Title', 'Value']),
         // Optional: A list of footer labels.
         foot: ['Total', '', '<code class="code">5</code>']
     };
@@ -115,6 +117,9 @@
 <svg id="expenses_chart" width="600" height="500"></svg>
 
 <div class="flow-root">
+    <div class="btn-group variant-ghost-surface float-left my-2">
+        <button>Add Payment</button>
+    </div>
     <div class="btn-group variant-ghost-surface float-right my-2">
         <button>Export ZIP</button>
         <button>Export XLSX</button>

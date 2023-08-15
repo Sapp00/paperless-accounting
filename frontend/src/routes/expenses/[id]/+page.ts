@@ -1,6 +1,7 @@
+
 import { onMount } from "svelte";
 
-export type ItemType = {
+export type Expense = {
     Date: string,
     Value: number,
     PaperlessID: number,
@@ -9,35 +10,40 @@ export type ItemType = {
     Content: string,
     Tags: number[],
     Created_date: string,
-};
+    paidValue?: number
+}
 
-export interface DataType {
-    item: ItemType,
-    error: string,
+type Payment = {
+    ID: number,
+    Date: string,
+    Value: number,
+    ExpenseID: number
 }
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch, params }) {
+
     try{
-        if (params.id != ''){
-            const res = await fetch(`http://localhost:8080/expenses/${params.year}/${params.id}`);
-            const item: ItemType = await res.json();
-    
-            return {
-                item: item,
-                error: ""
-            } as DataType;
-        } else {
-            return {
-                item: null as unknown as ItemType,
-                error: "No year parameter defined."
-            } as DataType
-        }
+        const res = await fetch(`http://localhost:8080/expense/${params.id}`);
+        const expense: Expense[] = await res.json();
+
+        const resP = await fetch(`http://localhost:8080/payments?` + new URLSearchParams({
+            expense: params.id
+        }));
+        const payments: Payment[] = await resP.json();
+
+
+        return {
+            expense: expense
+        };
     }
     catch(e){
+        console.log("error: "+e);
         return {
-            item: null as unknown as ItemType,
-            error: "Cannot establish connection"
-        } as DataType
+            expense: null,
+            error: "Cannot establish connection",
+            fromDate: null,
+            toDate: null,
+        }
     }
 }

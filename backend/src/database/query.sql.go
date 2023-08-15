@@ -159,6 +159,77 @@ func (q *Queries) GetPayment(ctx context.Context, id int64) (Payment, error) {
 	return i, err
 }
 
+const getPaymentsBetween = `-- name: GetPaymentsBetween :many
+SELECT id, expenseid, price, paiddate FROM payments
+WHERE paidDate >= ? AND paidDate <= ?
+`
+
+type GetPaymentsBetweenParams struct {
+	Paiddate   time.Time
+	Paiddate_2 time.Time
+}
+
+func (q *Queries) GetPaymentsBetween(ctx context.Context, arg GetPaymentsBetweenParams) ([]Payment, error) {
+	rows, err := q.db.QueryContext(ctx, getPaymentsBetween, arg.Paiddate, arg.Paiddate_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Expenseid,
+			&i.Price,
+			&i.Paiddate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPaymentsByExpense = `-- name: GetPaymentsByExpense :many
+SELECT id, expenseid, price, paiddate FROM payments
+WHERE expenseID = ?
+`
+
+func (q *Queries) GetPaymentsByExpense(ctx context.Context, expenseid int64) ([]Payment, error) {
+	rows, err := q.db.QueryContext(ctx, getPaymentsByExpense, expenseid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Expenseid,
+			&i.Price,
+			&i.Paiddate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExpenses = `-- name: ListExpenses :many
 SELECT id, price, expensedate FROM expenses
 ORDER BY id

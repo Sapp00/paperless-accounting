@@ -36,6 +36,14 @@ RETURNING *;
 SELECT * FROM payments
 WHERE id = ? LIMIT 1;
 
+-- name: GetPaymentsByExpense :many
+SELECT * FROM payments
+WHERE expenseID = ?;
+
+-- name: GetPaymentsBetween :many
+SELECT * FROM payments
+WHERE paidDate >= ? AND paidDate <= ?;
+
 -- name: ListPayments :many
 SELECT * FROM payments
 ORDER BY id;
