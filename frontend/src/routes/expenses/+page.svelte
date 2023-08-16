@@ -125,5 +125,6 @@
         <button>Export XLSX</button>
         <button>Export Diagram</button>
     </div>
+    <!-- better use Paginator -->
     <Table source={tableSimple} interactive={true} on:selected={mySelectionHandler} />
 </div>

@@ -5,7 +5,7 @@
 	import '@skeletonlabs/skeleton/styles/skeleton.css';
 	// Most of your app wide CSS should be put in this file
 	import '../app.postcss';
-	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, Toast } from '@skeletonlabs/skeleton';
 
 	import Navigation from '$lib/Navigation/Navigation.svelte';
 	import Breadcrumbs from '$lib/Navigation/Breadcrumbs.svelte';
@@ -13,6 +13,8 @@
 	import { page } from '$app/stores';
 </script>
 
+
+<Toast />
 <!-- App Shell -->
 <AppShell>
 	<svelte:fragment slot="header">

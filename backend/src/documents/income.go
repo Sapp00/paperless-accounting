@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"sapp/paperless-accounting/database"
 	"sapp/paperless-accounting/paperless"
 	"time"
@@ -29,7 +31,11 @@ type Income struct {
 func (m *DocumentMgr) GetIncome(id int) (*Income, error) {
 	ctx := context.Background()
 
-	val, err := m.client.ZRange(ctx, "incomes", 0, -1).Result()
+	val, err := m.client.ZRangeByScore(ctx, "incomes", &redis.ZRangeBy{
+		Min:   fmt.Sprint(id),
+		Max:   fmt.Sprint(id),
+		Count: 1,
+	}).Result()
 
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -58,7 +64,7 @@ func (m *DocumentMgr) GetIncomesBetween(fromTimeStr string, toTimeStr string) ([
 	if fromTimeStr == "-1" {
 		fromTime = time.Unix(0, 0)
 	} else {
-		fromTime, err = time.Parse(`"2006-01-02"`, fromTimeStr)
+		fromTime, err = time.Parse("2006-01-02", fromTimeStr)
 		if err != nil {
 			return nil, err
 		}
@@ -67,13 +73,16 @@ func (m *DocumentMgr) GetIncomesBetween(fromTimeStr string, toTimeStr string) ([
 	if toTimeStr == "0" {
 		toTime = time.Now()
 	} else {
-		toTime, err = time.Parse(`"2006-01-02"`, toTimeStr)
+		toTime, err = time.Parse("2006-01-02", toTimeStr)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	val, err := m.client.ZRange(ctx, "incomes", fromTime.Unix(), toTime.Unix()).Result()
+	val, err := m.client.ZRangeByScore(ctx, "incomes_by_date", &redis.ZRangeBy{
+		Min: fmt.Sprint(fromTime.Unix()),
+		Max: fmt.Sprint(toTime.Unix()),
+	}).Result()
 
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -82,16 +91,20 @@ func (m *DocumentMgr) GetIncomesBetween(fromTimeStr string, toTimeStr string) ([
 		return nil, err
 	}
 
+	log.Printf("From %v to %v: Got %d results\n", fromTime.Unix(), toTime.Unix(), len(val))
+
 	var res []*Income
 
 	for _, v := range val {
-		var p Income
+		var p []Income
 		err = json.Unmarshal([]byte(v), &p)
 
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, &p)
+		for _, r := range p {
+			res = append(res, &r)
+		}
 	}
 
 	return res, nil
@@ -102,29 +115,29 @@ func (m *DocumentMgr) GetIncomes() ([]*Income, error) {
 }
 
 func (m *DocumentMgr) UpdateIncome(id int, date *paperless.PaperlessTime, value *float64) (*Income, error) {
-	inc, err := m.GetIncome(id)
+	exp, err := m.GetIncome(id)
 	if err != nil {
-		return nil, errors.New("expense cannot be updated because it does not exist. create it first")
+		return nil, errors.New("income cannot be updated because it does not exist. create it first")
 	}
 	if date != nil {
-		inc.Date = *date
+		exp.Date = *date
 	}
 	if value != nil {
-		inc.Value = *value
+		exp.Value = *value
 	}
 
 	ctx := context.Background()
-	m.db.UpdateIncome(ctx, database.UpdateIncomeParams{Price: sql.NullFloat64{Valid: true, Float64: inc.Value}, Incomedate: inc.Date.Time, ID: int64(id)})
+	m.db.UpdateIncome(ctx, database.UpdateIncomeParams{Price: sql.NullFloat64{Valid: true, Float64: exp.Value}, Incomedate: exp.Date.Time, ID: int64(id)})
 
-	ej, err := json.Marshal(&inc)
+	ej, err := json.Marshal(&exp)
 	if err != nil {
 		return nil, err
 	}
 
-	err = m.client.ZAdd(ctx, "incomes", redis.Z{Score: float64(inc.PaperlessID), Member: ej}).Err()
+	err = m.client.ZAdd(ctx, "incomes", redis.Z{Score: float64(exp.PaperlessID), Member: ej}).Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return inc, nil
+	return exp, nil
 }

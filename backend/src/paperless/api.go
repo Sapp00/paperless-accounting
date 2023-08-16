@@ -119,7 +119,7 @@ func (p *Paperless) PaperlessDocumentQuery(query string) ([]PaperlessDocument, e
 func (p *Paperless) PaperlessCorrespondentList() ([]PaperlessCorrespondent, error) {
 	//var out []PaperlessDocument
 
-	out, err := paperlessQueryExecute[paperlessCorrespondentResponse, PaperlessCorrespondent](p.conf, "", "/api/documents/", true)
+	out, err := paperlessQueryExecute[paperlessCorrespondentResponse, PaperlessCorrespondent](p.conf, "", "/api/correspondents/", true)
 
 	if err != nil {
 		return nil, err

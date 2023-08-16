@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"sapp/paperless-accounting/config"
 	"sapp/paperless-accounting/crons"
@@ -19,9 +18,33 @@ import (
 type PaperlessCron struct {
 	client    *redis.Client
 	paperless *paperless.Paperless
-	dm        *documents.DocumentMgr
 	conf      *config.Config
 	db        *database.Queries
+}
+
+func (p PaperlessCron) updateCorrespondents() {
+	all_correspondents, err := p.paperless.PaperlessCorrespondentList()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx := context.Background()
+	for _, c := range all_correspondents {
+		cj, err := json.Marshal(&c)
+		if err != nil {
+			panic(err)
+		}
+
+		err = p.client.ZAdd(ctx, "correspondents", redis.Z{Score: float64(c.ID), Member: cj}).Err()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	p.client.Expire(ctx, "correspondents", time.Minute*5)
+
+	log.Printf("Have written %d correspondents\n", len(all_correspondents))
+
 }
 
 func (p PaperlessCron) Run() {
@@ -36,6 +59,24 @@ func (p PaperlessCron) Run() {
 	}
 
 	ctx := context.Background()
+
+	// remove previous data
+	err = p.client.Del(ctx, "expenses").Err()
+	if err != nil {
+		panic(err)
+	}
+	err = p.client.Del(ctx, "expenses_by_date").Err()
+	if err != nil {
+		panic(err)
+	}
+	err = p.client.Del(ctx, "incomes").Err()
+	if err != nil {
+		panic(err)
+	}
+	err = p.client.Del(ctx, "incomes_by_date").Err()
+	if err != nil {
+		panic(err)
+	}
 
 	expense_map := make(map[int64][]documents.Expense)
 	for _, e := range all_expenses {
@@ -169,10 +210,12 @@ func (p PaperlessCron) Run() {
 	p.client.Expire(ctx, "expenses", time.Minute*5)
 	p.client.Expire(ctx, "incomes", time.Minute*5)
 
+	p.updateCorrespondents()
+
 	// TODO: previous code should only be executed initially. in the future, the written arrays should be replaced with JSON
 	// the JSON then will then be written to the HSet and
 
-	fmt.Printf("Have written %v expense & %v income records to redis.\n", len(all_expenses), len(all_incomes))
+	log.Printf("Have written %v expense & %v income records to redis.\n", len(all_expenses), len(all_incomes))
 }
 
 func (p PaperlessCron) Interval() time.Duration {

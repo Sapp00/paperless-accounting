@@ -126,6 +126,8 @@ func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value
 		exp.Value = *value
 	}
 
+	fmt.Printf("changing date of %d to %v and value to %v\n", id, *date, *value)
+
 	ctx := context.Background()
 	m.db.UpdateExpense(ctx, database.UpdateExpenseParams{Price: sql.NullFloat64{Valid: true, Float64: exp.Value}, Expensedate: exp.Date.Time, ID: int64(id)})
 
@@ -134,7 +136,22 @@ func (m *DocumentMgr) UpdateExpense(id int, date *paperless.PaperlessTime, value
 		return nil, err
 	}
 
-	err = m.client.ZAdd(ctx, "incomes", redis.Z{Score: float64(exp.PaperlessID), Member: ej}).Err()
+	// update expenses
+	err = m.client.ZRem(ctx, "expenses", redis.Z{Score: float64(id), Member: ej}).Err()
+	if err != nil {
+		return nil, err
+	}
+	err = m.client.ZAdd(ctx, "expenses", redis.Z{Score: float64(id), Member: ej}).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	// update by date
+	err = m.client.ZRem(ctx, "expenses_by_date", redis.Z{Score: float64(exp.Date.Unix()), Member: ej}).Err()
+	if err != nil {
+		return nil, err
+	}
+	err = m.client.ZAdd(ctx, "expenses_by_date", redis.Z{Score: float64(exp.Date.Unix()), Member: ej}).Err()
 	if err != nil {
 		return nil, err
 	}
