@@ -63,9 +63,15 @@
 
     let selected;
 
-    function mySelectionHandler(meta: unknown): void{
+    function mySelectionHandler(meta: any): void{
         console.log('on:selected', meta);
         window.location.href = "/expenses/" + meta.detail[0];
+    }
+    function AddPayment(){
+        const tTodo: ToastSettings = {
+            message: 'Not yet implemented'
+        };
+        toastStore.trigger(tTodo);
     }
 </script>
 
@@ -114,6 +120,9 @@
                         <button type="button" class="btn-lg variant-filled" on:click={SendForm}>Update</button>
                     </div>
                 {:else if tabSet === 1}
+                    <div class="flex justify-center items-center m-4">
+                        <button type="button" class="btn variant-filled w-full" on:click={AddPayment}>Update</button>
+                    </div>
                     <Table source={tableSimple} interactive={true} on:selected={mySelectionHandler} />
                 {/if}
             </svelte:fragment>

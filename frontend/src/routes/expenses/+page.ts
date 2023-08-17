@@ -1,30 +1,6 @@
 
 import { onMount } from "svelte";
-
-type Expense = {
-    Date: string,
-    Value: number,
-    PaperlessID: number,
-    Correspondent: number,
-    Title: string,
-    Content: string,
-    Tags: number[],
-    Created_date: string,
-    paidValue?: number
-}
-
-type Payment = {
-    ID: number,
-    Date: string,
-    Value: number,
-    ExpenseID: number
-}
-
-type ChartEntry = {
-    date: string,
-    category: string,
-    value: number
-};
+import type{ Expense, Payment, ChartEntry} from "$lib/types";
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch }) {
@@ -51,52 +27,67 @@ export async function load({ fetch }) {
         const itemsP = new Map<string, ChartEntry>();
         let j=0;
 
+        if (payments != null){
+            console.log(`payments:${payments.length}`);
+            for (let i=0; i < payments.length; ){
+                let p = payments[i];
+                let e = expenses[j];
 
-        // process payments data for chart
-        payments.forEach(p => {
-            let v = itemsP.get(p.Date)
-            if (v == undefined){
-                let vn = {
-                    date: p.Date,
-                    category: "payment",
-                    value: p.Value
-                };
-                itemsP.set(p.Date, vn);
-            } else {
-                v!.value += p.Value
+                if (p.ExpenseID == e.PaperlessID){
+                    // exists? add
+                    if(e.paidValue != null){
+                        e.paidValue += p.Value;
+                    } else {
+                        e.paidValue = p.Value;
+                    }
+                    // add payment to chart and aggregate
+                    if ( itemsP.has(p.Date) ){
+                        itemsP.get(p.Date)!.value += p.Value;
+                    } else {
+                        itemsP.set(p.Date, {
+                            date: p.Date,
+                            category: "payment",
+                            value: p.Value
+                        });
+                    }
+                    ++i;
+                // next
+                } else {
+                    // add expense to chart and aggregate
+                    if ( itemsE.has(e.Date) ){
+                        itemsE.get(e.Date)!.value += e.Value;
+                    } else {
+                        itemsE.set(e.Date, {
+                            date: e.Date,
+                            category: "expense",
+                            value: e.Value
+                        });
+                    }
+                    j++;
+                }
             }
-        });
+        }
 
-        payments.forEach(p => {
-            let v = itemsP.get(p.Date)
-            if (v == undefined){
-                let vn = {
-                    date: p.Date,
-                    category: "payment",
-                    value: p.Value
-                };
-                itemsP.set(p.Date, vn);
+        console.log(`j:${j}`);
+
+        // add rest of the expenses
+        for(; j < expenses.length; ++j){
+            let e = expenses[j];
+            if ( itemsE.has(e.Date) ){
+                itemsE.get(e.Date)!.value += e.Value;
             } else {
-                v!.value += p.Value
-            }
-        });
-
-        expenses.forEach(e => {
-            let v = itemsE.get(e.Date)
-            if (v == undefined){
-                let vn = {
+                itemsE.set(e.Date, {
                     date: e.Date,
                     category: "expense",
                     value: e.Value
-                };
-                itemsE.set(e.Date, vn);
-            } else {
-                v!.value += e.Value
+                });
             }
-        });
+        }
 
         // combine both maps to one array of values
-        const items = Array.from(itemsE.values()).concat( Array.from(itemsP.values()) );
+        let items = Array.from(itemsE.values()).concat( Array.from(itemsP.values()) );
+
+        items.sort(function(a,b: ChartEntry) {return new Date(a.date).valueOf() - new Date(b.date).valueOf()});
         
         console.log(items);
 

@@ -29,8 +29,6 @@
 
         var keys = "date";
 
-        var d3data: ChartEntry[];
-
         var color = d3.scaleOrdinal()
             .domain(keys)
             .range(d3.schemeSet2);
@@ -90,15 +88,23 @@
     
     // table
 
+    let expenseSum = 0;
+    let paidSum = 0;
+    expenses.forEach(e => {
+        expenseSum += e.Value;
+        if (e.paidValue != null){
+            paidSum += e.paidValue;
+        }
+    });
     const tableSimple: TableSource = {
         // A list of heading labels.
-        head: ['Date', 'Title', 'Price'],
+        head: ['Date', 'Title', 'Price', 'Paid'],
         // The data visibly shown in your table body UI.
-        body: tableMapperValues(expenses, ['Date', 'Title', 'Value']),
+        body: tableMapperValues(expenses, ['Date', 'Title', 'Value', 'paidValue']),
         // Optional: The data returned when interactive is enabled and a row is clicked.
         meta: tableMapperValues(expenses, ['PaperlessID', 'Date', 'Title', 'Value']),
         // Optional: A list of footer labels.
-        foot: ['Total', '', '<code class="code">5</code>']
+        foot: ['<b>Total</b>', '', `<b>${expenseSum}</b>`, `<b>${paidSum}</b>`]
     };
 
 
