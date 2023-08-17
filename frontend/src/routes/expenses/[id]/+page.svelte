@@ -16,6 +16,7 @@
     let tabSet: number = 0;
     // Update
     let priceInput: HTMLInputElement;
+    let dateInput: HTMLInputElement;
     const tErr: ToastSettings = {
         message: 'Invalid Input, please correct the highlighted fields.'
     }
@@ -25,18 +26,29 @@
     function SendForm(){
         if (isValidFloat2D(priceInput.value)){
             priceInput.classList.remove("input-error");
-            toastStore.trigger(tSucc);
+
+            let opt = {
+                method: 'POST',
+                body: JSON.stringify( { date: dateInput.value, value: priceInput.value} )
+            }
+            fetch(`http://localhost:8080/expenses/${expense!.PaperlessID}/`, opt)
+            .then( res => res.json())
+            .then( res => {
+                if( res != null){
+                    toastStore.trigger(tSucc);
+                }
+            });
         } else {
             priceInput.classList.add("input-error");
             toastStore.trigger(tErr);
         }
     }
 
+    // PAYMENTS
     var paymentsSum = 0;
     payments?.forEach(p => {
         paymentsSum += p.Value;
-    })
-
+    });
     // payment table
     const tableSimple: TableSource = {
         // A list of heading labels.
@@ -84,7 +96,7 @@
                 {#if tabSet === 0}
                     <label class="label m-4">
                         <span>Date</span>
-                        <input class="input" type="date" value={expense.Date}/>
+                        <input class="input" type="date" value={expense.Date} bind:this={dateInput}/>
                     </label>
                     <label class="label m-4">
                         <span>Price</span>
@@ -109,7 +121,9 @@
     </div>
     <!-- Thumbnail -->
     <div class="card p-4 w-full text-token space-y-4">
-        <img class="h-auto max-w-full rounded-lg" src="http://localhost:8080/expenses/{expense.PaperlessID}/thumb/" alt={expense.Content}>
+        <a href="https://docs.local/api/documents/{expense.PaperlessID}/preview/" target="_blank">
+            <img class="h-auto max-w-full rounded-lg" src="http://localhost:8080/expenses/{expense.PaperlessID}/thumb/" alt={expense.Content}>
+        </a>
     </div>
 </div>
 {:else}

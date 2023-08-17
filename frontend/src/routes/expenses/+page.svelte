@@ -92,7 +92,7 @@
 
     const tableSimple: TableSource = {
         // A list of heading labels.
-        head: ['Date', 'Title', 'Weight'],
+        head: ['Date', 'Title', 'Price'],
         // The data visibly shown in your table body UI.
         body: tableMapperValues(expenses, ['Date', 'Title', 'Value']),
         // Optional: The data returned when interactive is enabled and a row is clicked.
@@ -100,6 +100,9 @@
         // Optional: A list of footer labels.
         foot: ['Total', '', '<code class="code">5</code>']
     };
+
+
+    console.log(expenses);
 
     let selected;
 
