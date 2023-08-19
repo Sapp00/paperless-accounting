@@ -57,27 +57,21 @@ func (q *Queries) CreateIncome(ctx context.Context, arg CreateIncomeParams) (Inc
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payments (
-  id, expenseID, price, paidDate
+  expenseID, price, paidDate
 ) VALUES (
-  ?, ?, ?, ?
+  ?, ?, ?
 )
 RETURNING id, expenseid, price, paiddate
 `
 
 type CreatePaymentParams struct {
-	ID        int64
 	Expenseid int64
 	Price     float64
 	Paiddate  time.Time
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
-	row := q.db.QueryRowContext(ctx, createPayment,
-		arg.ID,
-		arg.Expenseid,
-		arg.Price,
-		arg.Paiddate,
-	)
+	row := q.db.QueryRowContext(ctx, createPayment, arg.Expenseid, arg.Price, arg.Paiddate)
 	var i Payment
 	err := row.Scan(
 		&i.ID,

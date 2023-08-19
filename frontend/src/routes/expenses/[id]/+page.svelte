@@ -3,13 +3,15 @@
     import { onMount } from "svelte";
 	import type { Expense, Payment } from './+page';
     import {isValidFloat2D} from '$lib/helper/validation';
+    import EditPayment from '$lib/Views/EditPayment.svelte';
 
-    import { Table, tableMapperValues, type TableSource, toastStore, type ToastSettings, TabGroup, Tab } from '@skeletonlabs/skeleton';
+    import type { TableSource, ToastSettings, ModalComponent, ModalSettings } from '@skeletonlabs/skeleton';
+    import { Table, tableMapperValues, toastStore, TabGroup, Tab, modalStore } from '@skeletonlabs/skeleton';
 
 	export let data: PageData;
     const { expense, payments, correspondents, error } = data;
 
-    import MdEdit from 'svelte-icons/md/MdEdit.svelte'
+    import MdEdit from 'svelte-icons/md/MdEdit.svelte';
     import MdPayment from 'svelte-icons/md/MdPayment.svelte';
 
 
@@ -72,7 +74,27 @@
             message: 'Not yet implemented'
         };
         toastStore.trigger(tTodo);
+
+        modalStore.trigger(paymentModal);
     }
+
+    const paymentModalComponent: ModalComponent = {
+        // Pass a reference to your custom component
+        ref: EditPayment,
+        // Add the component properties as key/value pairs
+        props: {  
+            head: "Add Payment",
+            payment: null, 
+            expense: expense, 
+            class: "card p-4" 
+        },
+    };
+    const paymentModal: ModalSettings = {
+        type: 'component',
+        
+        // Pass the component directly:
+        component: paymentModalComponent,
+    };
 </script>
 
 <style>
@@ -80,7 +102,7 @@
       width: 32px;
       height: 32px;
     }
-  </style>
+</style>
 
 {#if expense}
 <h1 class="h2">{expense.Title}</h1>
@@ -117,11 +139,11 @@
                         </select>
                     </label>
                     <div class="flex justify-center items-center m-4">
-                        <button type="button" class="btn-lg variant-filled" on:click={SendForm}>Update</button>
+                        <button type="button" class="btn variant-filled w-full" on:click={SendForm}>Update</button>
                     </div>
                 {:else if tabSet === 1}
                     <div class="flex justify-center items-center m-4">
-                        <button type="button" class="btn variant-filled w-full" on:click={AddPayment}>Update</button>
+                        <button type="button" class="btn variant-filled w-full" on:click={AddPayment}>Add Payment</button>
                     </div>
                     <Table source={tableSimple} interactive={true} on:selected={mySelectionHandler} />
                 {/if}

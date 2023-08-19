@@ -85,3 +85,40 @@ func (m *DocumentMgr) GetPaymentsByExpenseID(id int) ([]*Payment, error) {
 
 	return payments, nil
 }
+
+func (m *DocumentMgr) UpdatePayment(id int, date *time.Time, price *float64) error {
+	ctx := context.Background()
+
+	params := database.UpdatePaymentParams{
+		ID: int64(id),
+	}
+	if date == nil {
+		params.Paiddate = *date
+	}
+	if price != nil {
+		params.Price = *price
+	}
+
+	return m.db.UpdatePayment(ctx, params)
+}
+
+func (m *DocumentMgr) CreatePayment(date time.Time, price float64, expenseID int) (*Payment, error) {
+	ctx := context.Background()
+
+	payDB, err := m.db.CreatePayment(ctx, database.CreatePaymentParams{
+		Expenseid: int64(expenseID),
+		Price:     price,
+		Paiddate:  date,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pay := Payment{
+		ID:        int(payDB.ID),
+		Date:      *paperless.NewPaperlessTime(date),
+		Value:     float32(price),
+		ExpenseID: expenseID,
+	}
+	return &pay, nil
+}
