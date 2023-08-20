@@ -49,8 +49,8 @@ export async function load({ fetch, params }) {
         console.log("error: "+e);
         return {
             expense: null,
-            payments: null,
-            correspondents: null,
+            payments: [] as Payment[],
+            correspondents: [] as Correspondent[],
             error: "Cannot establish connection",
             fromDate: null,
             toDate: null,

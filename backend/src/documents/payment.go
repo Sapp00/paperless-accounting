@@ -122,3 +122,11 @@ func (m *DocumentMgr) CreatePayment(date time.Time, price float64, expenseID int
 	}
 	return &pay, nil
 }
+
+func (m *DocumentMgr) DeletePayment(id int) error {
+	ctx := context.Background()
+
+	err := m.db.DeletePayment(ctx, int64(id))
+
+	return err
+}

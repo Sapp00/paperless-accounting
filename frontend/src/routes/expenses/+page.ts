@@ -25,13 +25,41 @@ export async function load({ fetch }) {
 
         const itemsE = new Map<string, ChartEntry>();
         const itemsP = new Map<string, ChartEntry>();
-        let j=0;
 
+        const itemsE2 = new Map<number, Expense>();
+
+        expenses.forEach(e => {
+            let eo = itemsE.get(e.Date);
+            if (eo != undefined){
+                itemsE.get(e.Date)!.value += e.Value;
+            } else {
+                itemsE.set(e.Date, {date: e.Date, category: "expense", value: e.Value});
+            }
+            e.paidValue = 0;
+            itemsE2.set(e.PaperlessID, e);
+        });
+        
+        payments.forEach(p => {
+            let ep = itemsP.get(p.Date);
+            if (ep != undefined){
+                itemsE.get(p.Date)!.value += p.Value;
+            } else {
+                itemsE.set(p.Date, {date: p.Date, category: "payment", value: p.Value});
+            }
+            itemsE2.get(p.ExpenseID)!.paidValue! += p.Value;
+        });
+
+
+     /*   let j=0;
+
+        console.log(payments);
         if (payments != null){
             console.log(`payments:${payments.length}`);
             for (let i=0; i < payments.length; ){
                 let p = payments[i];
                 let e = expenses[j];
+
+                console.log(`p[${i}]: ${p.ExpenseID} e[${j}]: ${e.PaperlessID}`);
 
                 if (p.ExpenseID == e.PaperlessID){
                     // exists? add
@@ -82,7 +110,7 @@ export async function load({ fetch }) {
                     value: e.Value
                 });
             }
-        }
+        }*/
 
         // combine both maps to one array of values
         let items = Array.from(itemsE.values()).concat( Array.from(itemsP.values()) );
@@ -91,9 +119,11 @@ export async function load({ fetch }) {
         
         console.log(items);
 
+        let expensesOut = Array.from(itemsE2.values());
+
         return {
             items: items,
-            expenses: expenses,
+            expenses: expensesOut,
             error: null,
             fromDate: new Date(fromTime!),
             toDate: new Date(toTime!),

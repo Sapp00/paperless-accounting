@@ -28,6 +28,8 @@ func New(conf *config.Config) (*Routes, error) {
 	}
 	r.router = gin.Default()
 
+	r.router.Use(corsMiddleware())
+
 	dm, err := documents.NewManager(conf)
 	if err != nil {
 		return nil, err
@@ -35,6 +37,21 @@ func New(conf *config.Config) (*Routes, error) {
 	r.dm = dm
 
 	return &r, nil
+}
+
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
 }
 
 func (r Routes) Setup() error {
@@ -56,6 +73,11 @@ func (r Routes) Setup() error {
 	}
 	r.router.GET("/payments", pay.GetPaymentsBetween)
 	r.router.GET("/payments/:id", pay.GetPayment)
+
+	r.router.POST("/payments", pay.CreatePayment)
+	r.router.POST("/payments/:id", pay.UpdatePayment)
+
+	r.router.DELETE("/payments/:id", pay.DeletePayment)
 
 	corr, err := correspondents.New(r.conf, r.dm)
 	if err != nil {

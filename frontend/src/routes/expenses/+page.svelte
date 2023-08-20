@@ -104,7 +104,7 @@
         // Optional: The data returned when interactive is enabled and a row is clicked.
         meta: tableMapperValues(expenses, ['PaperlessID', 'Date', 'Title', 'Value']),
         // Optional: A list of footer labels.
-        foot: ['<b>Total</b>', '', `<b>${expenseSum}</b>`, `<b>${paidSum}</b>`]
+        foot: ['<b>Total</b>', '', `<b>${expenseSum.toFixed(2)}</b>`, `<b>${paidSum.toFixed(2)}</b>`]
     };
 
 
@@ -117,7 +117,7 @@
         window.location.href = "/expenses/" + meta.detail[0];
     }
 
-    var dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    var dateOptions: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
 
 </script>
 

@@ -38,6 +38,8 @@
             .then( res => {
                 if( res != null){
                     toastStore.trigger(tSucc);
+                    expense!.Value = parseFloat(priceInput.value);
+                    expense!.Date = dateInput.value;
                 }
             });
         } else {
@@ -48,26 +50,70 @@
 
     // PAYMENTS
     var paymentsSum = 0;
-    payments?.forEach(p => {
-        paymentsSum += p.Value;
-    });
+    function UpdatePayments(){
+        paymentsSum = 0;
+        payments?.forEach(p => {
+            paymentsSum += p.Value;
+        });
+    };
+    UpdatePayments();
+
+    function UpdatePaymentEntry(p: Payment){
+        for(let i=0; i < payments.length; i++){
+            let pp = payments[i];
+            if ( pp.ID == p.ID ){
+                payments[i] = p;
+                return;
+            }
+        }
+        payments.push(p);
+        UpdatePayments();
+    }
+
     // payment table
-    const tableSimple: TableSource = {
+    $: tableSimple = {
         // A list of heading labels.
         head: ['Date', 'Value'],
         // The data visibly shown in your table body UI.
         body: tableMapperValues(payments!, ['Date', 'Value']),
         // Optional: The data returned when interactive is enabled and a row is clicked.
-        meta: tableMapperValues(payments!, ['ID']),
+        meta: tableMapperValues(payments!, ['ID', 'Date', 'Value']),
         // Optional: A list of footer labels.
-        foot: ['Total', '<code class="code">'+paymentsSum+'</code>']
+        foot: ['<b>Total</b>', '<b>'+paymentsSum.toFixed(2)+' / '+expense?.Value+'</b>']
     };
 
     let selected;
 
     function mySelectionHandler(meta: any): void{
         console.log('on:selected', meta);
-        window.location.href = "/expenses/" + meta.detail[0];
+        const updatePaymentModalComponent: ModalComponent = {
+            // Pass a reference to your custom component
+            ref: EditPayment,
+            // Add the component properties as key/value pairs
+            props: {  
+                head: "Update Payment",
+                payment: {ID: meta.detail[0], Date: meta.detail[1], Value: meta.detail[2], ExpenseID: expense!.PaperlessID} as Payment, 
+                expense: expense, 
+                class: "card p-4"
+            },
+        };
+        const updatePaymentModal: ModalSettings = {
+            type: 'component',
+            
+            // Pass the component directly:
+            component: updatePaymentModalComponent,
+            response: (r: Payment) => {
+                if (r != undefined) {
+                    console.log(r);
+                    UpdatePaymentEntry(r);
+                    modalStore.close(); 
+                } else {
+                    console.log("just closed");
+                }
+            }
+        };
+        modalStore.trigger(updatePaymentModal);
+        //window.location.href = "/payments/" + meta.detail[0];
     }
     function AddPayment(){
         const tTodo: ToastSettings = {
@@ -75,26 +121,35 @@
         };
         toastStore.trigger(tTodo);
 
-        modalStore.trigger(paymentModal);
-    }
+        const addPaymentModalComponent: ModalComponent = {
+            // Pass a reference to your custom component
+            ref: EditPayment,
+            // Add the component properties as key/value pairs
+            props: {  
+                head: "Add Payment",
+                payment: null, 
+                expense: expense, 
+                class: "card p-4"
+            },
+        };
+        const addPaymentModal: ModalSettings = {
+            type: 'component',
+            
+            // Pass the component directly:
+            component: addPaymentModalComponent,
+            response: (r: Payment) => {
+                if(r != undefined){
+                    console.log(r);
+                    UpdatePaymentEntry(r);
+                    modalStore.close();
+                } else {
+                    console.log("didnt do anything");
+                }
+            }
+        };
 
-    const paymentModalComponent: ModalComponent = {
-        // Pass a reference to your custom component
-        ref: EditPayment,
-        // Add the component properties as key/value pairs
-        props: {  
-            head: "Add Payment",
-            payment: null, 
-            expense: expense, 
-            class: "card p-4" 
-        },
-    };
-    const paymentModal: ModalSettings = {
-        type: 'component',
-        
-        // Pass the component directly:
-        component: paymentModalComponent,
-    };
+        modalStore.trigger(addPaymentModal);
+    }
 </script>
 
 <style>
