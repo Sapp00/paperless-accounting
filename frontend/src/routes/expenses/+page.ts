@@ -23,103 +23,49 @@ export async function load({ fetch }) {
         }));
         const payments: Payment[] = await resP.json();
 
-        const itemsE = new Map<string, ChartEntry>();
-        const itemsP = new Map<string, ChartEntry>();
 
-        const itemsE2 = new Map<number, Expense>();
+        let items: ChartEntry[] = [];
+        const itemsE = new Map<number, Expense>();
 
+        expenses.sort(function(a,b){return Date.parse(a.Date) - Date.parse(b.Date)});
+        payments.sort(function(a,b){return Date.parse(a.Date) - Date.parse(b.Date)});
+
+        let esum = 0;
+        let eprev: Expense|null = null;
         expenses.forEach(e => {
-            let eo = itemsE.get(e.Date);
-            if (eo != undefined){
-                itemsE.get(e.Date)!.value += e.Value;
-            } else {
-                itemsE.set(e.Date, {date: e.Date, category: "expense", value: e.Value});
+            if (eprev == null){
+                eprev = e;
+            } else if (eprev.Date != e.Date){
+                items.push({date: eprev.Date, category: "expense", value: esum });
+                eprev = e;
             }
+            esum += e.Value;
+            
             e.paidValue = 0;
-            itemsE2.set(e.PaperlessID, e);
+            itemsE.set(e.PaperlessID, e);
         });
         
+        let psum = 0;
+        let pprev: Payment|null = null;
         payments.forEach(p => {
-            let ep = itemsP.get(p.Date);
-            if (ep != undefined){
-                itemsE.get(p.Date)!.value += p.Value;
-            } else {
-                itemsE.set(p.Date, {date: p.Date, category: "payment", value: p.Value});
+            if(pprev == null){
+                pprev = p;
+            } else if(pprev.Date != p.Date){
+                items.push({date: pprev.Date, category: "payment", value: psum});
+                pprev = p;
             }
-            itemsE2.get(p.ExpenseID)!.paidValue! += p.Value;
+            psum += p.Value;
+            itemsE.get(p.ExpenseID)!.paidValue! += p.Value;
         });
-
-
-     /*   let j=0;
-
-        console.log(payments);
-        if (payments != null){
-            console.log(`payments:${payments.length}`);
-            for (let i=0; i < payments.length; ){
-                let p = payments[i];
-                let e = expenses[j];
-
-                console.log(`p[${i}]: ${p.ExpenseID} e[${j}]: ${e.PaperlessID}`);
-
-                if (p.ExpenseID == e.PaperlessID){
-                    // exists? add
-                    if(e.paidValue != null){
-                        e.paidValue += p.Value;
-                    } else {
-                        e.paidValue = p.Value;
-                    }
-                    // add payment to chart and aggregate
-                    if ( itemsP.has(p.Date) ){
-                        itemsP.get(p.Date)!.value += p.Value;
-                    } else {
-                        itemsP.set(p.Date, {
-                            date: p.Date,
-                            category: "payment",
-                            value: p.Value
-                        });
-                    }
-                    ++i;
-                // next
-                } else {
-                    // add expense to chart and aggregate
-                    if ( itemsE.has(e.Date) ){
-                        itemsE.get(e.Date)!.value += e.Value;
-                    } else {
-                        itemsE.set(e.Date, {
-                            date: e.Date,
-                            category: "expense",
-                            value: e.Value
-                        });
-                    }
-                    j++;
-                }
-            }
-        }
-
-        console.log(`j:${j}`);
-
-        // add rest of the expenses
-        for(; j < expenses.length; ++j){
-            let e = expenses[j];
-            if ( itemsE.has(e.Date) ){
-                itemsE.get(e.Date)!.value += e.Value;
-            } else {
-                itemsE.set(e.Date, {
-                    date: e.Date,
-                    category: "expense",
-                    value: e.Value
-                });
-            }
-        }*/
 
         // combine both maps to one array of values
-        let items = Array.from(itemsE.values()).concat( Array.from(itemsP.values()) );
+        //let items = Array.from(itemsE.values()).concat( Array.from(itemsP.values()) );
 
-        items.sort(function(a,b: ChartEntry) {return new Date(a.date).valueOf() - new Date(b.date).valueOf()});
+       // items.sort(function(a,b: ChartEntry) {return new Date(a.date).valueOf() - new Date(b.date).valueOf()});
         
-        console.log(items);
 
-        let expensesOut = Array.from(itemsE2.values());
+        let expensesOut = Array.from(itemsE.values());
+        console.log(expensesOut);
 
         return {
             items: items,
