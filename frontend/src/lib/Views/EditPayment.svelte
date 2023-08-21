@@ -28,14 +28,15 @@
     const tErr: ToastSettings = {
         message: 'Invalid Input, please correct the highlighted fields.'
     }
-    const tSucc: ToastSettings = {
-        message: `Successfully ${actionPhrase} the payment.`
-    }
 
     let dateInput: HTMLInputElement;
     let priceInput: HTMLInputElement;
     let expenseInput: HTMLSelectElement;
     function SendForm(){
+        const tSucc: ToastSettings = {
+            message: `Successfully ${actionPhrase} the payment.`
+        }
+
         if (isValidFloat2D(priceInput.value)){
             priceInput.classList.remove("input-error");
 
@@ -54,12 +55,15 @@
                     body: JSON.stringify( body )
                 };
                 req = fetch(`http://localhost:8080/payments`, opt);
+                console.log("add");
             } else {
                 let opt = {
                     method: 'POST',
                     body: JSON.stringify( { date: dateInput.value, value: priceInput.value} )
                 };
-                req = fetch(`http://localhost:8080/payments/${payment!.ID}/`, opt);
+                req = fetch(`http://localhost:8080/payments/${payment!.ID}`, opt);
+                console.log("up");
+                console.log(dateInput.value);
             }
 
 

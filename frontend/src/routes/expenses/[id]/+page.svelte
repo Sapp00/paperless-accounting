@@ -116,11 +116,6 @@
         //window.location.href = "/payments/" + meta.detail[0];
     }
     function AddPayment(){
-        const tTodo: ToastSettings = {
-            message: 'Not yet implemented'
-        };
-        toastStore.trigger(tTodo);
-
         const addPaymentModalComponent: ModalComponent = {
             // Pass a reference to your custom component
             ref: EditPayment,

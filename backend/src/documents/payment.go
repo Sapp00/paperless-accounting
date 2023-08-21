@@ -92,7 +92,7 @@ func (m *DocumentMgr) UpdatePayment(id int, date *time.Time, price *float64) err
 	params := database.UpdatePaymentParams{
 		ID: int64(id),
 	}
-	if date == nil {
+	if date != nil {
 		params.Paiddate = *date
 	}
 	if price != nil {
